@@ -6,8 +6,8 @@
 const STORAGE_KEY = "decompose_app_state";
 const MIN_INITIAL_TEXT_LENGTH = 10;
 const MAX_INITIAL_TEXT_LENGTH = 4000;
-
-
+const MIN_PAGE_COUNT = 1;
+const MAX_PAGE_COUNT = 1000;
 
 // ============================================================
 //  פונקציה 1: initProject
@@ -84,7 +84,7 @@ async function initProject(rawText) {
 
 function validatePageCount(pageCount) {
   if (pageCount === null || pageCount === undefined || pageCount === "") {
-    // need to create an alternative - infinte num of pages
+    // אופציונלי — אם לא הזין מספר עמודים, זה בסדר
     return null;
   }
 
@@ -95,12 +95,22 @@ function validatePageCount(pageCount) {
     return null;
   }
 
+  if (parsedPageCount < MIN_PAGE_COUNT) {
+    handleError(`מספר העמודים חייב להיות לפחות ${MIN_PAGE_COUNT}.`);
+    return null;
+  }
+
+  if (parsedPageCount > MAX_PAGE_COUNT) {
+    handleError(`מספר העמודים גבוה מדי. נסה להזין ${MAX_PAGE_COUNT} או פחות.`);
+    return null;
+  }
+
   return parsedPageCount;
 }
 
 function validateDueDate(dueDate) {
   if (dueDate === null || dueDate === undefined || dueDate === "") {
-    // need to create an alternative - infinte num of days
+    // אופציונלי — אם לא הזין תאריך, זה בסדר
     return null;
   }
 
@@ -125,55 +135,130 @@ function handleError(msg) {
 //  פונקציה 2: analyzeActionability
 // ============================================================
 function analyzeActionability(taskText) {
-let score = 0;
-if (taskText.length >= 20 && taskText.length > 0 ) {score += 1;}
-if (taskText.length >= 50 && taskText.length > 20) {score += 5;}
-if (taskText.length >= 100 && taskText.length > 50) {score += 10;}
-// מילים שמעידות על משימה רחבה מדי (אדום):
-// 🔴 Red words (too broad)
+  const normalizedText = typeof taskText === "string"
+    ? taskText.trim().toLowerCase().replace(/\s+/g, " ")
+    : "";
+
+  if (!normalizedText) {
+    return false;
+  }
+
+  // ======== 🔍 בדיקת חרטוטים - רק מילים ברורות בלבד ========
+  // רשימת מילים נפוצות ומוכרות בעברית (3+ אותיות בלבד)
+  const commonWords = [
+    "על", "את", "של", "עם", "בין", "או", "אבל", "אם", "אז", "כי", "כל", "יש", "אין", "יותר", "פחות", "מאוד", "מעט",
+    "כמו", "כן", "לא", "הכל", "משהו", "כמה", "איזה", "הזה", "הזאת", "אחד", "שניים",
+    "וגם", "גם", "רק", "עד", "מן", "שלה", "שלו",
+    "בתוך", "ליד", "לפני", "אחרי", "מעל", "מתחת", "דרך", "כנגד", "למעט", "בעד"
+  ];
+
+  // 🔴 Red words
   const redWords = [
-    "finish","write body","do project","study everything","work on assignment","write all","complete paper",
-    "הכל","לסיים","לעשות","כולו","כל העבודה","לטפל בזה","להכין עבודה","ללמוד הכל"
+    "הכל", "לסיים", "לעשות", "כולו", "כל העבודה", "לטפל", "להכין", "ללמוד",
+    "קרא", "כתוב", "בחן", "חקור", "עשה", "הכן", "טפל", "עסוק"
   ];
 
-  // 🟠 Medium words (not specific enough)
-  const mediumWords = [
-    "write about","learn about","read about","research","analyze","explore",
-    "לכתוב על","ללמוד על","לקרוא על","לחקור","לנתח","להסביר"
-  ];
-
-  // 🟢 Green words (actionable)
+  // 🟢 Green words
   const greenWords = [
-    "1 paragraph","one paragraph","2 sources","two sources","summarize","outline","find","compare","list 3","3 events","one cause",
-    "לכתוב פסקה","לקרוא מקור","לחפש 2","לסכם","למצוא מקור","להשוות בין","לכתוב מבוא","לנסח שאלה","לבנות ראשי פרקים","לכתוב 3 נקודות"
+    "פסקה", "פסקאות", "שורה", "שורות", "משפט", "משפטים",
+    "מקור", "מקורות", "ספר", "ספרים", "מאמר", "מאמרים",
+    "טבלה", "טבלאות", "גרף", "גרפים", "תרשים", "תרשימים",
+    "דוגמה", "דוגמאות", "דוגמא",
+    "השווה", "השוואה", "השוואות",
+    "סכום", "סיכום", "סכומים", "סיכומים",
+    "רשימה", "רשימות", "מנה", "מנות",
+    "מבוא", "מבואים", "סיום", "סיומים", "מסקנה", "מסקנות"
   ];
 
-  // 🟢🟢 Strong words (high value)
+  // 🟢🟢 Strong words
   const strongWords = [
-    "paragraph","question","source","claim","example","comparison","cause","event","outline",
-    "פסקה","שאלה","מקור","טענה","דוגמה","השוואה","סיבה","אירוע","מתווה"
+    "שלוש", "ארבע", "חמש", "שש", "שבע", "שמונה", "תשע", "עשר",
+    "150", "200", "250", "300", "100", "50",
+    "במילים", "בתווים", "בשורות",
+    "בעברית", "בעברית תקנית", "בעברית ברורה",
+    "מחדש", "חדש", "מתקדם", "בסיסי",
+    "בדיוק", "בעיקר", "בעקביות", "בבהירות"
   ];
 
+  // כל המילים המוכרות
+  const allRecognizedWords = [...commonWords, ...redWords, ...greenWords, ...strongWords];
 
-  // TODO שלב 2: עברו על המילים ובדקו אם הטקסט מכיל אותן
-  // טיפ: השתמשו ב-taskText.includes("מילה") לבדיקה
-  // לפני שאתה בודק את הטקסט - מומלץ להשתמש בטקסט המנורמל שיצרת ב-current state
-  //
-  //   for (let word of redWords) {
-  //     if (text.includes(word)) {
-  //       return { score: "red", label: "רחב מדי", suggestion: "נסה לחלק..." };
-  //     }
-  //   }
+  // ============ בדיקה: האם יש חרטוטים או אותיות לא ברורות ==============
+  const words = normalizedText.split(/\s+/);
+  let unknownWordCount = 0;
 
-  // TODO שלב 3: אם לא נמצאה מילת "אדום" — בדקו "ירוק"
-  //   for (let word of greenWords) {
-  //     if (text.includes(word)) {
-  //       return { score: "green", label: "מוכן לביצוע", suggestion: "מצוין!" };
-  //     }
-  //   }
+  for (const word of words) {
+    // הסר סימנים שאינם אותיות/מספרים עברית
+    const cleanWord = word.replace(/[^\u05D0-\u05EA0-9]/g, "");
+    
+    if (cleanWord.length === 0) continue; // דלג על מילים ריקות
 
-  // TODO שלב 4: אם לא ברור — החזירו "צהוב" כברירת מחדל
-  //   return { score: "yellow", label: "בינוני", suggestion: "נסה להיות יותר ספציפי" };
+    // אות בודדת היא סימן לחרטוט
+    if (cleanWord.length === 1 && !/[0-9]/.test(cleanWord)) {
+      unknownWordCount++;
+      continue;
+    }
+
+    // בדוק אם המילה או חלק ממנה מוכרים
+    // רק בדוק עבור מילים של 4+ אותיות כדי למנוע תת-string matches
+    const isRecognized = allRecognizedWords.some(recWord => 
+      recWord.length >= 4 && cleanWord.includes(recWord)
+    );
+    
+    // אם המילה לא מוכרת מהtextח העברי - עדיין יכול להיות לועז טהור
+    if (!isRecognized && cleanWord.length > 1) {
+      unknownWordCount++;
+    } else if (!isRecognized && cleanWord.length === 0) {
+      // אם cleanWord ריק, זה אומר שהמילה לא כוללת אותיות עברית בכלל
+      // כלומי היא לועזית טהורה (כמו abc, def, ghi)
+      unknownWordCount++;
+    }
+  }
+
+  // אם יותר מ-70% מהמילים לא מוכרות = חרטוט!
+  if (words.length > 0 && unknownWordCount > words.length * 0.7) {
+    return false;
+  }
+
+  // ============ ניקוד רגיל ==============
+  let score = 0;
+
+  if (normalizedText.length < 50) score += 1;
+  else if (normalizedText.length < 100) score += 5;
+  else if (normalizedText.length <= 200) score += 10;
+  else if (normalizedText.length <= 600) score += 5;
+  else score -= 3;
+
+  function containsTerm(text, term) {
+    return text.includes(term);
+  }
+
+  function countMatches(words) {
+    return words.filter((word) => containsTerm(normalizedText, word)).length;
+  }
+
+  const redMatches = countMatches(redWords);
+  const greenMatches = countMatches(greenWords);
+  const strongMatches = countMatches(strongWords);
+
+  score -= redMatches * 2;
+  score += greenMatches * 2;
+  score += strongMatches;
+
+  if (greenMatches > 0 && strongMatches > 0) score += 1;
+
+  if (redMatches >= 2 && greenMatches === 0 && strongMatches === 0) {
+    return false;
+  }
+
+  return score >= 5;
+if (!normalizedText.includes(" ")) {
+  return {
+    valid: false,
+    reason: "no_spaces",
+    message: "נראה שהטקסט נכתב בלי רווחים. נסה לכתוב אותו בצורה ברורה."
+  };
+}
 }
 
 
