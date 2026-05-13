@@ -2,218 +2,124 @@
  * ============================================================
  *  aiService.js  —  צוות D: יהודה ואביתר
  * ============================================================
- *
- *  מה האחריות שלכם?
- *  -----------------
- *  אתם ה"מוח" של האתר. כל שאלה שצוות C שולח לכם —
- *  אתם מטפלים בה, מנסחים תשובה חכמה, ומחזירים אותה. 
- *
- *  הרעיון המרכזי — ניהול "הקשר" (Context):
- *  בניגוד ל-AI אמיתי, אתם זוכרים מה קרה קודם!
- *  אתם שומרים היסטוריה ב-localStorage ומשתמשים בה
- *  כדי שהתשובות יהיו רלוונטיות למשתמש הספציפי.
- *
- *  דוגמה: אם המשתמש כבר פירק את הפרק הראשון,
- *  ה-AI שלכם יכול לומר "ראיתי שכבר עבדת על חלק א' —
- *  האם הקושי הוא במציאת מקורות או בניסוח?"
- *
- *  הקבצים שקוראים לכם:
- *    - logicManager.js (צוות C) — שולחים לכם sendQuery(...)
- *
- *  איך תריצו את הקוד?
- *    פתחו את index.html עם Live Server ב-VS Code.
- *    פתחו את כלי המפתחים (F12) → Console
- *    כדי לראות תוצאות ובדוק שהפונקציות עובדות.
- *
- * ============================================================
  */
 
-// ============================================================
-//  מפתח השמירה של היסטוריית ה-AI
-//  שמירה נפרדת מה-State הכללי של צוות C
-// ============================================================
-const AI_HISTORY_KEY = "decompose_ai_history";
+import { GoogleGenAI } from "@google/genai";
 
-
-// ============================================================
-//  מאגר הנתונים שלכם (Dictionaries)
-//  -------------------------------------------------------
-//  במקום לכתוב תשובות קשיחות, השתמשו במאגרים גדולים.
-//  ככל שהמאגר גדול יותר — ה-AI יראה יותר "אמיתי".
-//  הוסיפו כמה שיותר דוגמאות!
-// ============================================================
-
-// זוויות חשיבה לפי תחום לימוד
-const ANGLES_BY_SUBJECT = {
-  "היסטוריה": [
-    { angle: "כרונולוגי",  description: "סדר את האירועים לפי זמן — מה קרה ראשון ומה גרם למה?" },
-    { angle: "חברתי",     description: "מי היו האנשים שהושפעו? מה השתנה בחייהם?" },
-    { angle: "פוליטי",    description: "אילו כוחות וממשלות היו מעורבים? איך השתנה השלטון?" },
-  ],
-  "מדע":  [
-    { angle: "ניסיוני",   description: "מה השערת הניסוי? מה הוכח ומה לא?" },
-    { angle: "יישומי",    description: "איפה אנחנו רואים את זה בחיי היומיום?" },
-    { angle: "השוואתי",   description: "השווה בין שתי תיאוריות או תוצאות שונות" },
-  ],
-  "ספרות": [
-    { angle: "דמויות",    description: "מה מניע את הדמות הראשית? כיצד היא מתפתחת?" },
-    { angle: "נושאים",    description: "מהם הרעיונות הגדולים שהמחבר מעביר?" },
-    { angle: "סגנון",     description: "כיצד שפת הכתיבה תורמת למשמעות?" },
-  ],
-  // TODO הוסיפו עוד תחומים: מתמטיקה, אזרחות, גיאוגרפיה וכו'
-};
-
-// תגובות סוקרטיות לפי מילות מפתח
-const SOCRATIC_RESPONSES = {
-  "תקוע":      "ראיתי את ההתקדמות שלך עד עכשיו — מה הדבר האחד שמרגיש הכי מבלבל?",
-  "לא מבין":   "מה כן ברור לך עד עכשיו? נתחיל ממה שאתה יודע ונתקדם משם.",
-  "קשה":       "מה הדבר הקשה ביותר — מציאת המידע, או ניסוח המחשבות?",
-  "מקורות":    "כמה מקורות כבר מצאת? האם הם עונים על השאלה המרכזית שלך?",
-  "לא יודע":   "אם היית צריך לנחש — מה היית אומר? לפעמים הניחוש הראשון הוא הכי טוב.",
-  "עזרה":      "איזה חלק ספציפי הוא הכי קשה? אפשר לפרק את הבעיה לצעדים קטנים יותר?",
-  // TODO הוסיפו עוד מצבים ותגובות מתאימות
-};
-
-// ניסוחים משופרים לפי סוג הבעיה
-const IMPROVEMENT_TEMPLATES = {
-  "רחב מדי": {
-    prefix:      "נסה לצמצם: במקום '{{original}}', נסח כך:",
-    suggestion:  "מצא {{number}} דוגמאות ספציפיות ל-{{topic}}",
-    explanation: "משימה ספציפית יותר קל יותר להתחיל ולסיים."
-  },
-  "לא ברור": {
-    prefix:      "נסה לנסח כשאלת מחקר: במקום '{{original}}', שאל:",
-    suggestion:  "מה הקשר בין {{topic}} לבין {{context}}?",
-    explanation: "שאלת מחקר עוזרת לך לדעת בדיוק מה לחפש."
-  },
-  // TODO הוסיפו עוד סוגי בעיות
-};
-
+const AI_HISTORY_KEY = "my_ai_app_history";
+const MAX_HISTORY = 10;
+const ai = new GoogleGenAI({});
+const GEMINI_MODEL = "gemini-2.0-flash"; // ✅ תוקן: gemini-3-flash-preview לא קיים
 
 // ============================================================
-//  פונקציה 1: sendQuery  ← זו הפונקציה הכי חשובה!
+//  sendQuery — נקודת הכניסה המרכזית לכל הבקשות
 // ============================================================
-/**
- * מה היא עושה?
- * -------------
- * זו הפונקציה היחידה שצוות C קורא לה.
- * היא מקבלת "כוונה" (intent) ומידע (data),
- * ומחליטה איזו פונקציה פנימית להפעיל.
- *
- * קלט:
- *   intent (string) — סוג הבקשה, אחת מהאפשרויות:
- *     "DECOMPOSE_INITIAL"  — פרק משימה לחלקים
- *     "SUGGEST_IMPROVEMENT"— שפר משימה אדומה
- *     "SOCRATIC_CHAT"      — תגובה לצ'אט
- *     "GET_ANGLES"         — קבל זוויות חשיבה
- *
- *   data (any) — המידע הרלוונטי לבקשה
- *
- * פלט צפוי: Promise<object> — תמיד מחזיר אובייקט JSON מסודר
- *
- * מי קורא לה?
- *   רק צוות C — מתוך logicManager.js
- *
- * ⚠️ חשוב: הפונקציה הזו חייבת להיות async
- *    כי היא קוראת לפונקציות שלוקחות זמן
- */
-async function sendQuery(intent, data) {
+async function sendQuery(intent, rawData, userDescription) {
+  console.log(`🤖 aiService קיבל בקשה מסוג: ${intent}`);
 
-  // TODO שלב 1: הדפיסו ל-console כדי לדעת שהפונקציה נקראה
-  //   console.log("🤖 aiService קיבל בקשה:", intent, data);
+  const history = loadAIHistory();
+  let result = null;
 
-  // TODO שלב 2: טענו את היסטוריית השיחה (לשימוש בתגובות)
-  //   const history = loadAIHistory();
+  try {
+    if (intent === "DECOMPOSE_INITIAL") {
+      // rawData = הטקסט הגולמי, userDescription = newState שצריך למלא
+      result = await generateSmartDecomposition(rawData, userDescription);
 
-  // TODO שלב 3: בחרו מה לעשות לפי ה-intent
-  // השתמשו ב-if/else כדי לנתב לפונקציה הנכונה:
-  //
-  //   if (intent === "DECOMPOSE_INITIAL") {
-  //     result = await generateSmartDecomposition(data);
-  //
-  //   } else if (intent === "SUGGEST_IMPROVEMENT") {
-  //     result = await generateRefinedPrompt(data.taskText, data.reason);
-  //
-  //   } else if (intent === "SOCRATIC_CHAT") {
-  //     result = getSocraticResponse(data, history);
-  //
-  //   } else if (intent === "GET_ANGLES") {
-  //     result = getThinkingModels(data);
-  //
-  //   } else {
-  //     console.error("❌ intent לא מוכר:", intent);
-  //     return null;
-  //   }
+    } else if (intent === "SUGGEST_IMPROVEMENT") {
+      // rawData = { taskText, reason }
+      result = await generateRefinedPrompt(rawData.taskText, rawData.reason);
 
-  // TODO שלב 4: שמרו את השיחה בהיסטוריה
-  //   updateContext({ intent, data, result });
+    } else if (intent === "VALIDATE_TASK") {
+      // rawData = טקסט המשימה
+      // מחזיר { score: "red"|"yellow"|"green", label, explanation }
+      result = await validateTaskWithAI(rawData);
 
-  // TODO שלב 5: החזירו את התוצאה
-  //   return result;
+    } else if (intent === "SOCRATIC_CHAT") {
+      result = await getSocraticResponse(rawData, userDescription, history);
+
+    } else if (intent === "STUCK_ADVISOR") {
+      result = await getThinkingModels(rawData);
+
+    } else if (intent === "GET_ANGLES") {
+      result = await requestAnglesFromAI(rawData);
+
+    } else {
+      console.error("❌ intent לא מוכר:", intent);
+      return null;
+    }
+
+    if (result) {
+      updateContext(intent, rawData, result);
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error(`❌ שגיאה בביצוע ${intent}:`, error);
+    return null;
+  }
 }
 
 
 // ============================================================
-//  פונקציה 2: updateContext
+//  פונקציה חדשה: validateTaskWithAI
+//  נקראת מ-handleTaskValidation ב-logicManager
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
- * שומרת כל אינטראקציה ב-localStorage כדי שה-AI
- * "יזכור" מה קרה קודם ויתן תגובות רלוונטיות יותר.
+ * שולחת את טקסט המשימה ל-Gemini ומבקשת החלטה:
+ * האם המשימה ממוקדת (ירוק), רחבה מעט (צהוב), או רחבה מדי (אדום)?
  *
- * קלט:
- *   interaction (object):
- *   {
- *     intent:    "DECOMPOSE_INITIAL",
- *     data:      "...",          (מה צוות C שלח)
- *     result:    { ... },        (מה ה-AI החזיר)
- *     timestamp: "2025-01-01"   (מתי זה קרה)
- *   }
- *
- * פלט: אין (void) — רק שמירה
+ * קלט:  taskText (string)
+ * פלט:  { score: "red"|"yellow"|"green", label: string, explanation: string }
  */
-function updateContext(interaction) {
+async function validateTaskWithAI(taskText) {
+  const prompt = `
+אתה עוזר לימודי שעוזר לתלמידים לפרק משימות לחלקים קטנים וניתנים לביצוע.
 
-  // TODO שלב 1: הוסיפו timestamp לאינטראקציה
-  //   interaction.timestamp = new Date().toISOString();
+המשימה שהתלמיד כתב:
+"${taskText}"
 
-  // TODO שלב 2: טענו את ההיסטוריה הקיימת
-  //   const history = loadAIHistory();
+הערך האם המשימה ממוקדת וניתנת לביצוע:
 
-  // TODO שלב 3: הוסיפו את האינטראקציה החדשה למערך
-  //   history.push(interaction);
+🔴 אדום — המשימה רחבה מדי, עמומה, או כללית מדי (למשל: "לכתוב את כל העבודה", "ללמוד היסטוריה")
+🟡 צהוב — המשימה בכיוון הנכון אבל עדיין רחבה מעט (למשל: "לכתוב את הפרק הראשון")
+🟢 ירוק — המשימה ספציפית, קטנה וניתנת לביצוע היום (למשל: "לכתוב פסקת פתיחה על סיבות המהפכה הצרפתית")
 
-  // TODO שלב 4: שמרו בחזרה ל-localStorage
-  //   localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(history));
-
-  // TODO שלב 5: הדפיסו הודעת אישור
-  //   console.log("📝 היסטוריית AI עודכנה. סה״כ:", history.length, "אינטראקציות");
+החזר תשובה בפורמט JSON בלבד, ללא קוד markdown, בדיוק כך:
+{
+  "score": "red" | "yellow" | "green",
+  "label": "משפט קצר בעברית המסביר את ההחלטה",
+  "explanation": "הסבר קצר בעברית (2-3 משפטים) מה בדיוק הבעיה ואיך לשפר"
 }
+`;
 
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+  });
 
-// ============================================================
-//  פונקציה פנימית: loadAIHistory
-//  (פנימית = רק לשימוש בתוך הקובץ הזה)
-// ============================================================
-/**
- * מה היא עושה?
- * -------------
- * טוענת את היסטוריית האינטראקציות מ-localStorage.
- * אם אין היסטוריה — מחזירה מערך ריק.
- *
- * פלט: array
- */
-function loadAIHistory() {
+  const text = response.text.trim().replace(/```json|```/g, "").trim();
 
-  // TODO שלב 1: קראו מ-localStorage
-  //   const saved = localStorage.getItem(AI_HISTORY_KEY);
-
-  // TODO שלב 2: אם אין כלום — החזירו מערך ריק
-  //   if (!saved) return [];
-
-  // TODO שלב 3: פרסו ל-JSON והחזירו
-  //   return JSON.parse(saved);
+  try {
+    const parsed = JSON.parse(text);
+    // וידוא שהשדות הנדרשים קיימים
+    if (!["red", "yellow", "green"].includes(parsed.score)) {
+      throw new Error("score לא תקין");
+    }
+    return {
+      score: parsed.score,
+      label: parsed.label || "לא זוהה תיוג",
+      explanation: parsed.explanation || "",
+    };
+  } catch (e) {
+    console.error("❌ שגיאה בפירוש תשובת AI לvalidation:", e, "\nתשובה גולמית:", text);
+    // fallback — לפחות להחזיר משהו שמנע קריסה
+    return {
+      score: "yellow",
+      label: "לא הצלחנו לנתח את המשימה אוטומטית",
+      explanation: "נסה לנסח את המשימה בצורה ספציפית יותר.",
+    };
+  }
 }
 
 
@@ -221,50 +127,63 @@ function loadAIHistory() {
 //  פונקציה 3: generateSmartDecomposition
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
- * מקבלת נושא ומחזירה 3-4 "מקבצים" (Chunks) גדולים.
- * מנסה להתאים את הפירוק לסוג הנושא:
- *   - היסטוריה → פירוק כרונולוגי
- *   - מדע → פירוק לפי שלבי מחקר
- *   - ספרות → פירוק לפי אלמנטים ספרותיים
+ * מקבלת את הטקסט הגולמי של המשימה ומחלצת נתונים מובנים:
+ * מקצוע, נושא, סוג מטלה, ומקבצים לפירוק.
  *
- * קלט:
- *   topic (string) — נושא העבודה
- *
- * פלט צפוי (array):
- *   [
- *     { id: "chunk-1", title: "...", description: "..." },
- *     { id: "chunk-2", title: "...", description: "..." },
- *     { id: "chunk-3", title: "...", description: "..." }
- *   ]
+ * קלט:  rawText (string), currentState (object)
+ * פלט:  object עם שדות: subject, topic, assignmentType, chunks
  */
-async function generateSmartDecomposition(topic) {
+async function generateSmartDecomposition(rawText, currentState) {
+  const prompt = `
+אתה עוזר לימודי חכם לתלמידי תיכון.
+קרא את תיאור המשימה הבא והחזר מידע מובנה.
 
-  // TODO שלב 1: זהו לאיזה תחום שייך הנושא
-  // טיפ: השתמשו ב-topic.includes("מילה") לבדיקה
-  // דוגמה:
-  //   let subject = "כללי";
-  //   if (topic.includes("מהפכה") || topic.includes("מלחמה") || topic.includes("היסטוריה")) {
-  //     subject = "היסטוריה";
-  //   } else if (topic.includes("ניסוי") || topic.includes("מדע") || topic.includes("כימיה")) {
-  //     subject = "מדע";
-  //   }
+תיאור המשימה:
+"${rawText}"
 
-  // TODO שלב 2: בנו את רשימת המקבצים בהתאם לתחום
-  // דוגמה לפירוק היסטורי:
-  //   const chunks = [
-  //     { id: "chunk-1", title: "רקע ורקע היסטורי",   description: "מה היה המצב לפני האירוע?" },
-  //     { id: "chunk-2", title: "האירועים המרכזיים",   description: "מה קרה ובאיזה סדר?" },
-  //     { id: "chunk-3", title: "השפעות ומסקנות",      description: "מה השתנה כתוצאה מהאירוע?" },
-  //   ];
+החזר JSON בלבד, ללא markdown, בפורמט הזה בדיוק:
+{
+  "subject": "שם המקצוע (עברית, אנגלית, היסטוריה, מדע, וכו' — אם לא ברור כתוב null)",
+  "topic": "נושא הפרויקט במשפט אחד (אם לא ברור כתוב null)",
+  "assignmentType": "סוג המטלה: עבודה | בחינה | מצגת | קריאה | אחר",
+  "pgNumberScope": null,
+  "chunks": [
+    { "id": "chunk-1", "title": "שם החלק", "description": "מה צריך לעשות בחלק הזה" },
+    { "id": "chunk-2", "title": "שם החלק", "description": "מה צריך לעשות בחלק הזה" },
+    { "id": "chunk-3", "title": "שם החלק", "description": "מה צריך לעשות בחלק הזה" }
+  ]
+}
 
-  // TODO שלב 3: הוסיפו עיכוב קצר (מדמה חשיבה של AI)
-  // דוגמה:
-  //   await delay(800);  // המתן 0.8 שניות
+הנחיות לפירוק לחלקים (chunks):
+- היסטוריה / חברה → פירוק כרונולוגי: רקע, אירועים מרכזיים, השפעות
+- מדע / ביולוגיה / כימיה → שלבי מחקר: שאלה, השערה, ניסוי, מסקנות
+- ספרות / עברית → אלמנטים ספרותיים: עלילה, דמויות, מסר
+- כללי → מבוא, גוף, סיכום
+`;
 
-  // TODO שלב 4: החזירו את המקבצים
-  //   return chunks;
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+  });
+
+  const text = response.text.trim().replace(/```json|```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(text);
+
+    // מיזוג עם ה-state הקיים
+    return {
+      ...currentState,
+      subject: parsed.subject || null,
+      topic: parsed.topic || null,
+      assignmentType: parsed.assignmentType || null,
+      pgNumberScope: parsed.pgNumberScope || currentState?.pgNumberScope || null,
+      chunks: Array.isArray(parsed.chunks) ? parsed.chunks : [],
+    };
+  } catch (e) {
+    console.error("❌ שגיאה בפירוש תשובת AI לפירוק:", e, "\nתשובה גולמית:", text);
+    return currentState || null;
+  }
 }
 
 
@@ -272,43 +191,52 @@ async function generateSmartDecomposition(topic) {
 //  פונקציה 4: generateRefinedPrompt
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
  * מקבלת משימה "אדומה" ומנסחת אותה מחדש בצורה ספציפית יותר.
  *
- * קלט:
- *   originalTask   (string) — המשימה המקורית ("לכתוב את כל העבודה")
- *   analysisLabel  (string) — הסיבה לכישלון ("רחב מדי")
- *
- * פלט צפוי (object):
- *   {
- *     refinedText:  "כתוב פסקה אחת על הסיבות הכלכליות למהפכה",
- *     explanation:  "פסקה אחת היא יעד קטן וברור שאפשר להשלים היום"
- *   }
+ * קלט:  originalTask (string), analysisLabel (string)
+ * פלט:  { refinedText: string, explanation: string }
  */
 async function generateRefinedPrompt(originalTask, analysisLabel) {
+  const prompt = `
+אתה עוזר לימודי שמסייע לתלמידים לפרק משימות גדולות לצעדים קטנים.
 
-  // TODO שלב 1: בחרו תבנית מ-IMPROVEMENT_TEMPLATES לפי ה-analysisLabel
-  // דוגמה:
-  //   const template = IMPROVEMENT_TEMPLATES[analysisLabel]
-  //     || IMPROVEMENT_TEMPLATES["רחב מדי"];  // ברירת מחדל
+המשימה המקורית של התלמיד:
+"${originalTask}"
 
-  // TODO שלב 2: מלאו את התבנית עם הנתונים הספציפיים
-  // טיפ: השתמשו ב-.replace() להחלפת ה-placeholders
-  // דוגמה:
-  //   const refined = template.suggestion
-  //     .replace("{{original}}", originalTask)
-  //     .replace("{{number}}", "3")
-  //     .replace("{{topic}}", originalTask);
+הסיבה שהמשימה נדחתה: ${analysisLabel}
 
-  // TODO שלב 3: הוסיפו עיכוב קצר (מדמה חשיבה)
-  //   await delay(600);
+תפקידך: נסח מחדש את המשימה כך שתהיה:
+- ספציפית (פסקה אחת / דף אחד / מושג אחד)
+- קטנה (ניתן לביצוע ב-30-60 דקות)
+- ברורה (ברור מתי היא הושלמה)
 
-  // TODO שלב 4: החזירו אובייקט מסודר
-  //   return {
-  //     refinedText:  refined,
-  //     explanation:  template.explanation
-  //   };
+החזר JSON בלבד, ללא markdown:
+{
+  "refinedText": "הנוסח המשופר של המשימה",
+  "explanation": "הסבר קצר (משפט אחד) למה הנוסח החדש טוב יותר"
+}
+`;
+
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+  });
+
+  const text = response.text.trim().replace(/```json|```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(text);
+    return {
+      refinedText: parsed.refinedText || originalTask,
+      explanation: parsed.explanation || "",
+    };
+  } catch (e) {
+    console.error("❌ שגיאה בפירוש תשובת שיפור:", e);
+    return {
+      refinedText: originalTask,
+      explanation: "לא הצלחנו לשפר אוטומטית — נסה לפרק את המשימה לחלק קטן יותר.",
+    };
+  }
 }
 
 
@@ -316,43 +244,47 @@ async function generateRefinedPrompt(originalTask, analysisLabel) {
 //  פונקציה 5: getSocraticResponse
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
- * מחזירה שאלה מנחה (לא תשובה!) בהתאם להודעת המשתמש.
- * משתמשת בהיסטוריה כדי לתת תגובה רלוונטית לפרויקט הספציפי.
+ * מחזירה שאלה מנחה סוקרטית (לא תשובה ישירה!)
+ * בהתאם לשאלת המשתמש וההיסטוריה.
  *
- * קלט:
- *   userMessage (string) — מה המשתמש כתב בצ'אט
- *   history     (array)  — היסטוריית האינטראקציות הקודמות
- *
- * פלט צפוי (string):
- *   "ראיתי שכבר פירקת את הפרק הראשון — מה הדבר שמרגיש הכי לא ברור?"
- *
- * כלל הזהב: לעולם אל תחזירו תשובה ישירה — רק שאלה מנחה!
+ * קלט:  userMessage (string), userDescription (any), history (array)
+ * פלט:  string — שאלה מנחה
  */
-function getSocraticResponse(userMessage, history) {
+async function getSocraticResponse(userMessage, userDescription, history) {
+  // בניית הקשר מההיסטוריה
+  const historyContext =
+    history && history.length > 0
+      ? history
+          .slice(-3) // רק 3 האינטראקציות האחרונות
+          .map((h) => `[${h.intent}]: ${JSON.stringify(h.user).substring(0, 80)}`)
+          .join("\n")
+      : "אין היסטוריה קודמת.";
 
-  // TODO שלב 1: עברו על מילות המפתח ב-SOCRATIC_RESPONSES
-  // טיפ: המירו ל-lowercase לפני הבדיקה
-  // דוגמה:
-  //   const lowerMsg = userMessage.toLowerCase();
-  //   for (let keyword in SOCRATIC_RESPONSES) {
-  //     if (lowerMsg.includes(keyword)) {
-  //       return SOCRATIC_RESPONSES[keyword];
-  //     }
-  //   }
+  const prompt = `
+אתה מורה שמשתמש בשיטה הסוקרטית — אתה אף פעם לא נותן תשובות ישירות, רק שואל שאלות מנחות.
 
-  // TODO שלב 2: אם יש היסטוריה — השתמשו בה לתגובה אישית יותר
-  // דוגמה:
-  //   if (history && history.length > 0) {
-  //     const lastAction = history[history.length - 1];
-  //     if (lastAction.intent === "DECOMPOSE_INITIAL") {
-  //       return "ראיתי שכבר פירקת את המשימה לחלקים — איזה חלק מרגיש הכי קשה?";
-  //     }
-  //   }
+הקשר מהשיחה הקודמת:
+${historyContext}
 
-  // TODO שלב 3: תגובת ברירת מחדל אם לא נמצאה התאמה
-  //   return "ספר לי יותר — מה בדיוק מרגיש קשה עכשיו?";
+התלמיד כתב:
+"${userMessage}"
+
+כתוב שאלה מנחה אחת בעברית שתעזור לתלמיד לחשוב לבד.
+כללים:
+- שאלה אחת בלבד
+- לא יותר מ-2 משפטים
+- אל תיתן את התשובה, רק הכוון
+- אם יש היסטוריה — התייחס אליה לתגובה אישית יותר
+
+החזר את השאלה בלבד, ללא הסברים נוספים.
+`;
+
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+  });
+
+  return response.text.trim();
 }
 
 
@@ -360,61 +292,109 @@ function getSocraticResponse(userMessage, history) {
 //  פונקציה 6: getThinkingModels
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
- * מחזירה זוויות חשיבה בהתאם לנושא/תחום הלימוד.
- * משתמשת במאגר ANGLES_BY_SUBJECT למעלה.
+ * מחזירה זוויות חשיבה בהתאם לנושא.
  *
- * קלט:
- *   subject (string) — נושא או תחום הלימוד
- *
- * פלט צפוי (array):
- *   [
- *     { angle: "כרונולוגי", description: "..." },
- *     { angle: "חברתי",    description: "..." },
- *     { angle: "פוליטי",   description: "..." }
- *   ]
+ * קלט:  subject (string)
+ * פלט:  [{ angle: string, description: string }, ...]
  */
-function getThinkingModels(subject) {
+async function getThinkingModels(subject) {
+  const prompt = `
+אתה עוזר לימודי לתלמידי תיכון.
 
-  // TODO שלב 1: בדקו אם הנושא מופיע ב-ANGLES_BY_SUBJECT
-  // דוגמה:
-  //   for (let key in ANGLES_BY_SUBJECT) {
-  //     if (subject.includes(key)) {
-  //       return ANGLES_BY_SUBJECT[key];
-  //     }
-  //   }
+הנושא: "${subject}"
 
-  // TODO שלב 2: ברירת מחדל — החזירו זוויות כלליות
-  //   return [
-  //     { angle: "מה",  description: "מה קרה? מה הנושא המרכזי?" },
-  //     { angle: "למה", description: "מה הסיבות? מה הרקע?" },
-  //     { angle: "מה השפעה", description: "מה התוצאות לטווח הארוך?" },
-  //   ];
+הצע 3 זוויות חשיבה שונות שיעזרו לתלמיד לנתח את הנושא הזה.
+כל זווית צריכה להיות שונה (למשל: כרונולוגית, חברתית, כלכלית, מדעית, ספרותית, וכו').
+
+החזר JSON בלבד, ללא markdown:
+[
+  { "angle": "שם הזווית", "description": "שאלה או הנחיה קצרה לחשיבה מהזווית הזאת" },
+  { "angle": "שם הזווית", "description": "שאלה או הנחיה קצרה" },
+  { "angle": "שם הזווית", "description": "שאלה או הנחיה קצרה" }
+]
+`;
+
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+  });
+
+  const text = response.text.trim().replace(/```json|```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) return parsed;
+    throw new Error("התשובה אינה מערך");
+  } catch (e) {
+    console.error("❌ שגיאה בזוויות חשיבה:", e);
+    // fallback כללי
+    return [
+      { angle: "מה", description: "מה קרה? מה הנושא המרכזי?" },
+      { angle: "למה", description: "מה הסיבות? מה הרקע?" },
+      { angle: "מה השפעה", description: "מה התוצאות לטווח הארוך?" },
+    ];
+  }
 }
 
 
 // ============================================================
-//  פונקציה עזר: delay
-//  כדי לדמות "חשיבה" של AI — ממתינים כמה מאות מילישניות
+//  פונקציה: requestAnglesFromAI
+//  נקראת ע"י intent: "GET_ANGLES" מ-logicManager
 // ============================================================
-/**
- * ממתינה ms מילישניות ואז ממשיכה.
- * דוגמה לשימוש: await delay(800);  // המתן 0.8 שניות
- *
- * @param {number} ms — כמה מילישניות לחכות
- */
+async function requestAnglesFromAI(topic) {
+  return await getThinkingModels(topic);
+}
+
+
+// ============================================================
+//  היסטוריה
+// ============================================================
+function loadAIHistory() {
+  const saved = localStorage.getItem(AI_HISTORY_KEY);
+  if (!saved) return [];
+  try {
+    return JSON.parse(saved);
+  } catch (e) {
+    console.error("Failed to parse history", e);
+    return [];
+  }
+}
+
+function updateContext(intent, userText, aiResponse) {
+  const history = loadAIHistory();
+
+  const interaction = {
+    timestamp: new Date().toISOString(),
+    intent: intent,
+    user: userText,
+    assistant: aiResponse,
+  };
+
+  history.push(interaction);
+
+  if (history.length > MAX_HISTORY) {
+    history.shift();
+  }
+
+  localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(history));
+  console.log(`📝 היסטוריית AI עודכנה. סה״כ: ${history.length} אינטראקציות`);
+}
+
+
+// ============================================================
+//  פונקציית עזר: delay
+// ============================================================
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 
 // ============================================================
-//  חשיפת הפונקציות לשאר הקבצים
-//  שימו לב: רק sendQuery נחשף לצוות C!
-//  שאר הפונקציות הן "פנימיות" — רק לשימוש בתוך הקובץ הזה.
+//  חשיפת פונקציות
 // ============================================================
 const aiService = {
-  sendQuery,       // ← זו הפונקציה היחידה שצוות C קורא לה
-  updateContext,   // ← נחשף גם כן למקרה שצוות C צריך לעדכן ישירות
+  sendQuery,
+  updateContext,
 };
+
+export default aiService;

@@ -2,370 +2,326 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decompose App</title>
 <style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  direction: rtl;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8f1ed 100%);
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;direction:rtl;background:linear-gradient(135deg,#f5f5f5 0%,#e8f1ed 100%);min-height:100vh;padding:1rem}
+.page{max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding:1rem 0}
+.card{background:white;border:1px solid rgba(0,0,0,0.08);border-radius:15px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.card-green{background:#5ea07e;border:none;border-radius:15px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+label{font-size:13px;color:rgba(255,255,255,0.85);display:block;margin-bottom:6px}
+textarea,input[type="text"],input[type="date"],input[type="number"]{
+  width:100%;border:none;border-radius:8px;padding:9px 12px;
+  font-size:14px;font-family:'Segoe UI',Arial,sans-serif;
+  background:white;color:#1a1a1a;transition:all 0.2s
 }
-
-#main-start-work {
-  display: flex;
-  position: relative;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
-  gap: 8px;
+textarea{resize:vertical}
+textarea:focus,input:focus{outline:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);background:#f9f9f9}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btn{
+  width:100%;padding:11px;background:#2c2c2c;color:white;
+  border:none;border-radius:8px;cursor:pointer;font-size:14px;
+  font-weight:600;margin-top:8px;transition:all 0.3s
 }
-
-.box {
-  width: 90%;
-  max-width: 500px;
-  margin: 10px auto;
-  padding: 20px;
-  background: #5ea07e;
-  border-radius: 15px;
-  transition: all 0.3s ease;
+.btn:hover{background:#4a7c5e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.btn-outline{
+  background:transparent;color:#2c2c2c;
+  border:1px solid rgba(0,0,0,0.2);
 }
-
-.row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+.btn-outline:hover{background:rgba(0,0,0,0.05);transform:translateY(-1px)}
+.btn-sm{width:auto;padding:8px 14px;margin-top:0;font-size:13px}
+.section-title{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:12px}
+.card .label-dark{font-size:13px;color:#555;display:block;margin-bottom:6px}
+.card textarea,.card input[type="text"],.card input[type="date"],.card input[type="number"]{
+  border:1px solid rgba(0,0,0,0.12);
 }
-
-input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  transition: all 0.3s ease;
-  font-size: 14px;
+.score-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:500}
+.score-red{background:#fcebeb;color:#a32d2d}
+.score-yellow{background:#faeeda;color:#854f0b}
+.score-green{background:#eaf3de;color:#3b6d11}
+.result-box{border-radius:8px;padding:1rem;margin-top:10px;border:1px solid rgba(0,0,0,0.08);background:#fafafa}
+.suggestion-box{background:#f4f4f4;border-radius:8px;padding:1rem;margin-top:10px;border:1px solid rgba(0,0,0,0.08)}
+.suggestion-box .sug-label{font-size:12px;color:#777;margin-bottom:6px}
+.suggestion-box .sug-text{font-size:14px;color:#1a1a1a;font-weight:500}
+.suggestion-box .sug-explain{font-size:13px;color:#555;margin-top:6px;line-height:1.5}
+.timeline-item{
+  display:grid;grid-template-columns:1.4fr 1fr auto;gap:8px;
+  align-items:center;background:#f8fbf8;border-radius:10px;
+  padding:10px;margin-bottom:8px;border:1px solid #d8e3dc
 }
-
-input:focus {
-  outline: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  background: #f9f9f9;
+.timeline-item strong{font-size:13px;font-weight:500;color:#214235}
+.timeline-item input{border:1px solid rgba(0,0,0,0.12)}
+.timeline-empty{font-size:14px;color:#888;text-align:center;padding:1rem 0}
+.summary-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:14px}
+.summary-row:last-child{border-bottom:none}
+.summary-key{color:#666}
+.summary-val{font-weight:500;color:#1a1a1a}
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(255,255,255,0.3);border-top-color:white;
+  border-radius:50%;animation:spin 0.7s linear infinite;
+  vertical-align:middle;margin-right:6px
 }
-
-button {
-  width: 100%;
-  padding: 12px;
-  background: #2c2c2c;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-  margin-top: 8px;
-}
-
-button:hover{
-  background-color: #4a7c5e;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.summary {
-  width: 90%;
-  max-width: 500px;
-  margin: 10px auto;
-  padding: 20px;
-  background: #4a8c6e;
-  color: white;
-  border-radius: 15px;
-  font-size: 16px;
-  text-align: center;
-  justify-content: center;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.summary h3 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-}
-
-.summary p {
-  margin: 8px 0;
-  line-height: 1.6;
-}
-
-.timeline-panel {
-  width: 90%;
-  max-width: 500px;
-  margin: 10px auto 24px;
-  padding: 20px;
-  background: #f8fbf8;
-  border-radius: 15px;
-  border: 1px solid rgba(44, 44, 44, 0.08);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-}
-
-.timeline-panel h3 {
-  margin: 0 0 8px 0;
-  color: #1f2a24;
-}
-
-.timeline-panel p {
-  margin: 0 0 16px 0;
-  color: #4b5b53;
-  line-height: 1.5;
-}
-
-.timeline-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.timeline-item {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr auto;
-  gap: 10px;
-  align-items: center;
-  background: white;
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid #d8e3dc;
-}
-
-.timeline-item strong {
-  color: #214235;
-}
-
-.timeline-item input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.timeline-item button {
-  width: auto;
-  margin-top: 0;
-  padding: 10px 12px;
-}
-
-.timeline-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.timeline-actions button {
-  flex: 1;
-}
-
-.timeline-empty {
-  color: #6d7f75;
-  text-align: center;
-  padding: 10px 0 2px;
-}
-
-.success{
-  display: flex;
-  justify-content: flex-end;
-  text-align: right;
-  font-weight: bold;
-  margin-top: 10px;
-  font-size: 14px;
-} 
-.top-section {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
-  direction: ltr;
-}
-
-.box, .text-box {
-  background: #5ea07e;
-  padding: 20px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 500px;
-  direction: rtl;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-#free-text {
-  width: 95%;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  resize: vertical;
-  min-height: 50px;
-  max-height: 120px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  margin: 0 auto;
-  display: block;
-}
-
-#free-text:focus {
-  outline: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  background: #f9f9f9;
-}
-
-
-
-
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none}
+.ai-tag{font-size:11px;background:#e6f1fb;color:#185fa5;padding:2px 8px;border-radius:10px;margin-left:6px}
+.local-tag{font-size:11px;background:#f0f0f0;color:#666;padding:2px 8px;border-radius:10px;margin-left:6px}
+.timeline-actions{display:flex;gap:10px;margin-top:12px}
+.timeline-actions .btn{flex:1}
 </style>
 </head>
-
 <body>
-  <div id="main-start-work">
-<div class="text-box">
- <textarea id="free-text" placeholder="מה אתה רוצה לכתוב?"></textarea> 
-</div>
-<div class="box">
 
+<div class="page">
 
-  <!-- שורה עליונה -->
-  <div class="row">
-    <input id="subject" placeholder="מקצוע">
-    <input id="topic" placeholder="נושא העבודה">
+  <!-- תיאור המשימה -->
+  <div class="card-green">
+    <label>תאר את המשימה שלך</label>
+    <textarea id="free-text" rows="3" placeholder="מה אתה רוצה לכתוב? למשל: לכתוב עבודה על המהפכה הצרפתית..."></textarea>
   </div>
 
-  <!-- שורה תחתונה -->
-  <div class="row">
-    <input id="pages" placeholder="מספר עמודים">
-    <input id="date" type="date">
+  <!-- טופס פרטים -->
+  <div class="card-green">
+    <div class="row">
+      <div><label>מקצוע</label><input type="text" id="subject" placeholder="היסטוריה, מדע..."></div>
+      <div><label>נושא</label><input type="text" id="topic" placeholder="נושא העבודה"></div>
+    </div>
+    <div class="row">
+      <div><label>מספר עמודים</label><input type="number" id="pages" placeholder="5" min="1" max="1000"></div>
+      <div><label>תאריך הגשה</label><input type="date" id="date"></div>
+    </div>
+    <button class="btn" onclick="handleStart()">
+      <span id="start-spinner" class="spinner hidden"></span>
+      <span id="start-label">בוא נתחיל</span>
+    </button>
   </div>
 
-  <button id="button_work" onclick="show()">בוא נתחיל</button>
-
-</div>
-
-<!-- קופסת סיכום -->
-<div class="summary">
-  <h3>סיכום:</h3>
-  <p id="out"></p>
-  <p class="success">בהצלחה!</p>
-</div>
-
-<div class="timeline-panel">
-  <h3>לוח זמנים מותאם אישית</h3>
-  <p>המערכת בונה לך תוכנית לפי תאריך ההגשה, ואפשר לשנות כל שלב ידנית אם צריך יותר זמן או פחות.</p>
-  <div id="timeline-list" class="timeline-list">
-    <div class="timeline-empty">עדיין לא נבנה לוח זמנים.</div>
+  <!-- סיכום -->
+  <div id="summary-card" class="card hidden">
+    <div class="section-title">סיכום המשימה</div>
+    <div id="summary-content"></div>
   </div>
-  <div class="timeline-actions">
-    <button type="button" onclick="rebuildTimeline()">בנה לוח זמנים</button>
-    <button type="button" onclick="resetTimeline()">אפס שינויים</button>
+
+  <!-- בדיקת מיקוד -->
+  <div class="card">
+    <div class="section-title">בדיקת מיקוד המשימה</div>
+    <label class="label-dark">כתוב את המשימה הספציפית לבדיקה</label>
+    <textarea id="task-input" rows="2" placeholder="למשל: לכתוב פסקת פתיחה על הסיבות הכלכליות למהפכה הצרפתית"></textarea>
+    <button class="btn" onclick="handleValidate()">
+      <span id="validate-spinner" class="spinner hidden"></span>
+      <span id="validate-label">בדוק משימה</span>
+    </button>
+    <div id="validation-result" class="hidden"></div>
   </div>
+
+  <!-- לוח זמנים -->
+  <div class="card">
+    <div class="section-title">לוח זמנים מותאם אישית</div>
+    <p style="font-size:14px;color:#666;margin-bottom:14px;line-height:1.5">
+      המערכת בונה תוכנית לפי תאריך ההגשה — אפשר לשנות כל שלב ידנית.
+    </p>
+    <div id="timeline-list">
+      <div class="timeline-empty">עדיין לא נבנה לוח זמנים.</div>
+    </div>
+    <div class="timeline-actions">
+      <button class="btn btn-outline" onclick="rebuildTimeline()">בנה לוח זמנים</button>
+      <button class="btn btn-outline" onclick="resetTimeline()">אפס שינויים</button>
+    </div>
+  </div>
+
 </div>
-</div>
+
+<!-- 
+  חיבור לקבצים שלכם:
+  <script src="aiService.js" type="module"></script>
+  <script src="logicManager.js" type="module"></script>
+-->
 
 <script>
 const MILESTONES = [
-  { name: "הבנת המשימה ובחירת מבנה", percentFromStart: 0.10 },
-  { name: "בחירת מקורות", percentFromStart: 0.30 },
-  { name: "איסוף מקורות", percentFromStart: 0.50 },
-  { name: "כתיבת פסקה ראשונה", percentFromStart: 0.70 },
-  { name: "עריכה וסיכום", percentFromStart: 0.90 },
-  { name: "הגשה סופית", percentFromStart: 1.00 }
+  { name: "הבנת המשימה ובחירת מבנה", p: 0.10 },
+  { name: "בחירת מקורות",             p: 0.30 },
+  { name: "איסוף מקורות",              p: 0.50 },
+  { name: "כתיבת פסקה ראשונה",        p: 0.70 },
+  { name: "עריכה וסיכום",              p: 0.90 },
+  { name: "הגשה סופית",               p: 1.00 }
 ];
 
 let currentTimeline = [];
+let taskCounter = 0;
 
-function show() {
-  document.getElementById("out").innerHTML =
-    "מקצוע: " + document.getElementById("subject").value + "   " +
-    "נושא: " + document.getElementById("topic").value + "    " +
-    "עמודים: " + document.getElementById("pages").value + " <br> " +
-    "תאריך: " + document.getElementById("date").value;
-
-  rebuildTimeline();
+// ── עזר: loading state ────────────────────────────────────
+function setLoading(labelId, spinnerId, on) {
+  const labels = { 'start-label': ['בוא נתחיל', 'מעבד...'], 'validate-label': ['בדוק משימה', 'בודק...'] };
+  document.getElementById(labelId).textContent = on ? labels[labelId][1] : labels[labelId][0];
+  document.getElementById(spinnerId).classList.toggle('hidden', !on);
 }
 
-function calculateBackwardTimeline(dueDate) {
-  const finalDate = new Date(dueDate);
+// ── כפתור "בוא נתחיל" ────────────────────────────────────
+async function handleStart() {
+  const rawText = document.getElementById('free-text').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const topic   = document.getElementById('topic').value.trim();
+  const pages   = document.getElementById('pages').value;
+  const date    = document.getElementById('date').value;
 
-  if (Number.isNaN(finalDate.getTime())) {
-    return [];
+  if (!rawText) { alert('אנא כתוב תיאור משימה לפני שממשיכים'); return; }
+
+  setLoading('start-label', 'start-spinner', true);
+  let aiResult = null;
+
+  try {
+    if (typeof logicManager !== 'undefined') {
+      aiResult = await logicManager.initProject(rawText);
+    }
+  } catch (e) {
+    console.warn('logicManager לא זמין:', e);
+  } finally {
+    setLoading('start-label', 'start-spinner', false);
   }
 
-  const today = new Date();
-  const millisecondsPerDay = 1000 * 60 * 60 * 24;
-  const totalDays = Math.max(
-    0,
-    Math.round((finalDate - today) / millisecondsPerDay)
-  );
+  const finalSubject = aiResult?.subject || subject || '—';
+  const finalTopic   = aiResult?.topic   || topic   || '—';
+  const finalType    = aiResult?.assignmentType     || '—';
 
-  return MILESTONES.map((milestone) => {
-    const daysFromNow = Math.round(totalDays * milestone.percentFromStart);
-    const milestoneDate = new Date(today);
-    milestoneDate.setDate(today.getDate() + daysFromNow);
+  const summaryCard = document.getElementById('summary-card');
+  summaryCard.classList.remove('hidden');
+  document.getElementById('summary-content').innerHTML = `
+    <div class="summary-row"><span class="summary-key">מקצוע</span><span class="summary-val">${finalSubject}</span></div>
+    <div class="summary-row"><span class="summary-key">נושא</span><span class="summary-val">${finalTopic}</span></div>
+    <div class="summary-row"><span class="summary-key">סוג מטלה</span><span class="summary-val">${finalType}</span></div>
+    ${pages ? `<div class="summary-row"><span class="summary-key">עמודים</span><span class="summary-val">${pages}</span></div>` : ''}
+    ${date  ? `<div class="summary-row"><span class="summary-key">תאריך הגשה</span><span class="summary-val">${date}</span></div>` : ''}
+    ${aiResult?.chunks?.length ? `<div class="summary-row"><span class="summary-key">חלקים שזוהו</span><span class="summary-val">${aiResult.chunks.length} חלקים</span></div>` : ''}
+  `;
 
-    return {
-      milestone: milestone.name,
-      date: milestoneDate.toISOString().split("T")[0]
-    };
-  });
+  if (date) rebuildTimeline();
 }
 
-function rebuildTimeline() {
-  const dueDate = document.getElementById("date").value;
-  const timelineList = document.getElementById("timeline-list");
+// ── כפתור "בדוק משימה" ───────────────────────────────────
+async function handleValidate() {
+  const taskText = document.getElementById('task-input').value.trim();
+  if (!taskText) { alert('כתוב משימה לבדיקה'); return; }
 
-  if (!dueDate) {
-    timelineList.innerHTML = '<div class="timeline-empty">צריך לבחור תאריך הגשה כדי לבנות תוכנית.</div>';
+  const resultDiv = document.getElementById('validation-result');
+  resultDiv.classList.add('hidden');
+  setLoading('validate-label', 'validate-spinner', true);
+
+  taskCounter++;
+  const taskId = `task-${taskCounter}`;
+  let result = null;
+
+  try {
+    if (typeof logicManager !== 'undefined') {
+      result = await logicManager.handleTaskValidation(taskId, taskText);
+    }
+  } catch (e) {
+    console.warn('logicManager לא זמין, מריץ fallback מקומי:', e);
+  } finally {
+    setLoading('validate-label', 'validate-spinner', false);
+  }
+
+  // fallback מקומי אם logicManager לא מחובר
+  if (!result) result = localFallbackValidation(taskId, taskText);
+
+  renderValidationResult(result);
+  resultDiv.classList.remove('hidden');
+}
+
+// ── Fallback מקומי (ללא logicManager) ────────────────────
+function localFallbackValidation(taskId, taskText) {
+  const greenWords = ["פסקה","שורה","משפט","מקור","ספר","מאמר","טבלה","גרף","תרשים","דוגמה","השוואה","סיכום","רשימה","מבוא","מסקנה"];
+  const hasGreen   = greenWords.some(w => taskText.includes(w));
+  const isShort    = taskText.length < 30;
+  const score      = hasGreen ? 'green' : isShort ? 'red' : 'yellow';
+  const labels     = { red: 'המשימה נראית רחבה מדי', yellow: 'המשימה רחבה מעט', green: 'המשימה נראית ממוקדת' };
+  const explains   = {
+    red:    'נסה להתמקד בפסקה, משפט, או רעיון ספציפי אחד.',
+    yellow: 'הוסף פירוט — כמה פסקאות? איזה היבט ספציפי?',
+    green:  'מצוין! המשימה קטנה וניתנת לביצוע.'
+  };
+  return { taskId, score, label: labels[score], explanation: explains[score], source: 'local', aiSuggestion: null };
+}
+
+// ── הצגת תוצאת הבדיקה ────────────────────────────────────
+function renderValidationResult(result) {
+  const scoreClass = { red: 'score-red', yellow: 'score-yellow', green: 'score-green' }[result.score] || 'score-yellow';
+  const scoreIcon  = { red: '🔴', yellow: '🟡', green: '🟢' }[result.score] || '🟡';
+  const sourceTag  = result.source === 'ai'
+    ? '<span class="ai-tag">AI</span>'
+    : '<span class="local-tag">מקומי</span>';
+
+  let html = `<div class="result-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      ${sourceTag}
+      <span class="${scoreClass} score-badge">${scoreIcon} ${result.label}</span>
+    </div>`;
+  if (result.explanation) html += `<p style="font-size:14px;color:#555;line-height:1.6">${result.explanation}</p>`;
+  html += `</div>`;
+
+  if (result.aiSuggestion) {
+    const safeText = (result.aiSuggestion.refinedText || '').replace(/'/g, "\\'");
+    html += `<div class="suggestion-box">
+      <div class="sug-label">💡 הצעת שיפור מה-AI</div>
+      <div class="sug-text">${result.aiSuggestion.refinedText || ''}</div>
+      ${result.aiSuggestion.explanation ? `<div class="sug-explain">${result.aiSuggestion.explanation}</div>` : ''}
+      <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="applyAISuggestion('${safeText}')">השתמש בהצעה זו</button>
+    </div>`;
+  }
+
+  document.getElementById('validation-result').innerHTML = html;
+}
+
+function applyAISuggestion(text) {
+  document.getElementById('task-input').value = text;
+}
+
+// ── לוח זמנים ────────────────────────────────────────────
+function rebuildTimeline() {
+  const dateVal = document.getElementById('date').value;
+  const list    = document.getElementById('timeline-list');
+
+  if (!dateVal) {
+    list.innerHTML = '<div class="timeline-empty">בחר תאריך הגשה כדי לבנות תוכנית.</div>';
     currentTimeline = [];
     return;
   }
 
-  currentTimeline = calculateBackwardTimeline(dueDate);
-
-  if (currentTimeline.length === 0) {
-    timelineList.innerHTML = '<div class="timeline-empty">לא הצלחנו לבנות לוח זמנים. בדוק את תאריך ההגשה.</div>';
+  const finalDate = new Date(dateVal);
+  if (isNaN(finalDate.getTime())) {
+    list.innerHTML = '<div class="timeline-empty">תאריך לא תקין.</div>';
     return;
   }
 
-  timelineList.innerHTML = currentTimeline.map((item, index) => `
+  const today     = new Date();
+  const totalDays = Math.max(0, Math.round((finalDate - today) / 86400000));
+
+  currentTimeline = MILESTONES.map(m => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + Math.round(totalDays * m.p));
+    return { milestone: m.name, date: d.toISOString().split('T')[0] };
+  });
+
+  renderTimeline();
+}
+
+function renderTimeline() {
+  document.getElementById('timeline-list').innerHTML = currentTimeline.map((item, i) => `
     <div class="timeline-item">
       <strong>${item.milestone}</strong>
-      <input type="date" value="${item.date}" aria-label="${item.milestone}">
-      <button type="button" onclick="updateMilestoneDate(${index}, this.previousElementSibling.value)">שמור</button>
-    </div>
-  `).join("");
+      <input type="date" value="${item.date}" aria-label="${item.milestone}" id="tl-${i}">
+      <button class="btn btn-outline btn-sm" onclick="saveMilestone(${i})">שמור</button>
+    </div>`).join('');
 }
 
-function updateMilestoneDate(index, newDate) {
-  if (!currentTimeline[index]) {
-    return;
-  }
-
-  currentTimeline[index].date = newDate;
-  renderSavedSummary();
+function saveMilestone(i) {
+  const val = document.getElementById(`tl-${i}`).value;
+  if (val) currentTimeline[i].date = val;
+  renderTimeline();
 }
 
-function renderSavedSummary() {
-  const timelineList = document.getElementById("timeline-list");
-
-  timelineList.innerHTML = currentTimeline.map((item, index) => `
-    <div class="timeline-item">
-      <strong>${item.milestone}</strong>
-      <input type="date" value="${item.date}" aria-label="${item.milestone}">
-      <button type="button" onclick="updateMilestoneDate(${index}, this.previousElementSibling.value)">שמור</button>
-    </div>
-  `).join("");
-}
-
-function resetTimeline() {
-  rebuildTimeline();
-}
+function resetTimeline() { rebuildTimeline(); }
 </script>
 
 </body>

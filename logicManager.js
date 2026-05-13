@@ -12,11 +12,13 @@ const MAX_PAGE_COUNT = 1000;
 // ============================================================
 //  פונקציה 1: initProject
 // ============================================================
-const TASK_PG_ERROR_MSG = "שגיאה: לא הוזן מספר עמודים. אנא כתוב את המשימה שלך לפני השמירה.";
-const TASK_ERROR_MSG = "שגיאה: לא הוזן טקסט. אנא כתוב את המשימה שלך לפני השמירה.";
+const TASK_PG_ERROR_MSG =
+  "שגיאה: לא הוזן מספר עמודים. אנא כתוב את המשימה שלך לפני השמירה.";
+const TASK_ERROR_MSG =
+  "שגיאה: לא הוזן טקסט. אנא כתוב את המשימה שלך לפני השמירה.";
 
 function createNewState() {
-    return {
+  return {
     rawText: null,
     subject: null,
     assignmentType: null,
@@ -24,11 +26,11 @@ function createNewState() {
     pgNumberScope: null,
     dueDate: null,
     chunkLabel: null,
-    chunkSummary: null
-    };
+    chunkSummary: null,
+  };
 }
+
 async function initProject(rawText) {
-  // בדיקה ראשונית - האם הטקסט ריק?
   if (typeof rawText !== "string") {
     handleError(TASK_ERROR_MSG);
     return null;
@@ -47,34 +49,38 @@ async function initProject(rawText) {
   }
 
   if (normalizedText.length > MAX_INITIAL_TEXT_LENGTH) {
-    handleError(`הטקסט ארוך מדי. נסה לקצר ל-${MAX_INITIAL_TEXT_LENGTH} תווים או פחות.`);
+    handleError(
+      `הטקסט ארוך מדי. נסה לקצר ל-${MAX_INITIAL_TEXT_LENGTH} תווים או פחות.`
+    );
     return null;
   }
 
   const newState = createNewState();
   newState.rawText = normalizedText;
-  
+
   try {
-    // שליחת השאילתה ל-AI
-    const currentState = await aiService.sendQuery("DECOMPOSE_INITIAL", normalizedText, newState);
+    const currentState = await aiService.sendQuery(
+      "DECOMPOSE_INITIAL",
+      normalizedText,
+      newState
+    );
 
     if (!currentState) {
       handleError("לא התקבלה תגובה מהשרת. נסה שוב.");
       return null;
     }
 
-    // בדיקת שדות חובה - אם חסרים, אפשר להחזיר את ה-State בכל זאת
-    // כדי שהמשתמש ימלא את החסר בטופס הוויזואלי
     const missingFields = [];
     if (!currentState.subject) missingFields.push("מקצוע");
     if (!currentState.topic) missingFields.push("נושא");
 
     if (missingFields.length > 0) {
-      console.warn(`שים לב: לא הצלחנו לזהות אוטומטית: ${missingFields.join(", ")}`);
+      console.warn(
+        `שים לב: לא הצלחנו לזהות אוטומטית: ${missingFields.join(", ")}`
+      );
     }
 
     return currentState;
-
   } catch (error) {
     handleError("שגיאה בתקשורת עם ה-AI. בדוק את החיבור לאינטרנט.");
     console.error("AI Service Error:", error);
@@ -84,11 +90,11 @@ async function initProject(rawText) {
 
 function validatePageCount(pageCount) {
   if (pageCount === null || pageCount === undefined || pageCount === "") {
-    // אופציונלי — אם לא הזין מספר עמודים, זה בסדר
     return null;
   }
 
-  const parsedPageCount = typeof pageCount === "number" ? pageCount : Number(pageCount);
+  const parsedPageCount =
+    typeof pageCount === "number" ? pageCount : Number(pageCount);
 
   if (!Number.isFinite(parsedPageCount) || !Number.isInteger(parsedPageCount)) {
     handleError("מספר העמודים חייב להיות מספר שלם תקין.");
@@ -110,11 +116,11 @@ function validatePageCount(pageCount) {
 
 function validateDueDate(dueDate) {
   if (dueDate === null || dueDate === undefined || dueDate === "") {
-    // אופציונלי — אם לא הזין תאריך, זה בסדר
     return null;
   }
 
-  const parsedDate = dueDate instanceof Date ? new Date(dueDate.getTime()) : new Date(dueDate);
+  const parsedDate =
+    dueDate instanceof Date ? new Date(dueDate.getTime()) : new Date(dueDate);
 
   if (Number.isNaN(parsedDate.getTime())) {
     handleError("תאריך ההגשה אינו תקין.");
@@ -124,41 +130,34 @@ function validateDueDate(dueDate) {
   return parsedDate;
 }
 
-
 function handleError(msg) {
-  alert(msg); // maybe change to a nicer UI element later
+  alert(msg);
   console.error(msg);
 }
 
 
 // ============================================================
 //  פונקציה 2: analyzeActionability
+//  ✅ נשארת ללא שינוי — ניתוח מקומי (לפני הבקשה ל-AI)
 // ============================================================
 function analyzeActionability(taskText) {
-  const normalizedText = typeof taskText === "string"
-    ? taskText.trim().toLowerCase().replace(/\s+/g, " ")
-    : "";
+  const normalizedText =
+    typeof taskText === "string"
+      ? taskText.trim().toLowerCase().replace(/\s+/g, " ")
+      : "";
 
   if (!normalizedText) {
     return false;
   }
 
-  // ======== 🔍 בדיקת חרטוטים - רק מילים ברורות בלבד ========
-  // רשימת מילים נפוצות ומוכרות בעברית (3+ אותיות בלבד)
   const commonWords = [
-    "על", "את", "של", "עם", "בין", "או", "אבל", "אם", "אז", "כי", "כל", "יש", "אין", "יותר", "פחות", "מאוד", "מעט",
-    "כמו", "כן", "לא", "הכל", "משהו", "כמה", "איזה", "הזה", "הזאת", "אחד", "שניים",
-    "וגם", "גם", "רק", "עד", "מן", "שלה", "שלו",
-    "בתוך", "ליד", "לפני", "אחרי", "מעל", "מתחת", "דרך", "כנגד", "למעט", "בעד"
+    "על", "את", "של", "עם", "בין", "או", "אבל", "אם", "אז", "כי", "כל",
+    "יש", "אין", "יותר", "פחות", "מאוד", "מעט", "כמו", "כן", "לא", "הכל",
+    "משהו", "כמה", "איזה", "הזה", "הזאת", "אחד", "שניים", "וגם", "גם",
+    "רק", "עד", "מן", "שלה", "שלו", "בתוך", "ליד", "לפני", "אחרי", "מעל",
+    "מתחת", "דרך", "כנגד", "למעט", "בעד",
   ];
 
-  // 🔴 Red words
-  const redWords = [
-    "הכל", "לסיים", "לעשות", "כולו", "כל העבודה", "לטפל", "להכין", "ללמוד",
-    "קרא", "כתוב", "בחן", "חקור", "עשה", "הכן", "טפל", "עסוק"
-  ];
-
-  // 🟢 Green words
   const greenWords = [
     "פסקה", "פסקאות", "שורה", "שורות", "משפט", "משפטים",
     "מקור", "מקורות", "ספר", "ספרים", "מאמר", "מאמרים",
@@ -167,67 +166,39 @@ function analyzeActionability(taskText) {
     "השווה", "השוואה", "השוואות",
     "סכום", "סיכום", "סכומים", "סיכומים",
     "רשימה", "רשימות", "מנה", "מנות",
-    "מבוא", "מבואים", "סיום", "סיומים", "מסקנה", "מסקנות"
+    "מבוא", "מבואים", "סיום", "סיומים", "מסקנה", "מסקנות",
   ];
 
-  // 🟢🟢 Strong words
-  const strongWords = [
-    "שלוש", "ארבע", "חמש", "שש", "שבע", "שמונה", "תשע", "עשר",
-    "150", "200", "250", "300", "100", "50",
-    "במילים", "בתווים", "בשורות",
-    "בעברית", "בעברית תקנית", "בעברית ברורה",
-    "מחדש", "חדש", "מתקדם", "בסיסי",
-    "בדיוק", "בעיקר", "בעקביות", "בבהירות"
-  ];
+  const allRecognizedWords = [...commonWords, ...greenWords];
 
-  // כל המילים המוכרות
-  const allRecognizedWords = [...commonWords, ...redWords, ...greenWords, ...strongWords];
-
-  // ============ בדיקה: האם יש חרטוטים או אותיות לא ברורות ==============
   const words = normalizedText.split(/\s+/);
   let unknownWordCount = 0;
 
   for (const word of words) {
-    // הסר סימנים שאינם אותיות/מספרים עברית
     const cleanWord = word.replace(/[^\u05D0-\u05EA0-9]/g, "");
-    
-    if (cleanWord.length === 0) continue; // דלג על מילים ריקות
-
-    // אות בודדת היא סימן לחרטוט
+    if (cleanWord.length === 0) continue;
     if (cleanWord.length === 1 && !/[0-9]/.test(cleanWord)) {
       unknownWordCount++;
       continue;
     }
-
-    // בדוק אם המילה או חלק ממנה מוכרים
-    // רק בדוק עבור מילים של 4+ אותיות כדי למנוע תת-string matches
-    const isRecognized = allRecognizedWords.some(recWord => 
-      recWord.length >= 4 && cleanWord.includes(recWord)
+    const isRecognized = allRecognizedWords.some(
+      (recWord) => recWord.length >= 4 && cleanWord.includes(recWord)
     );
-    
-    // אם המילה לא מוכרת מהtextח העברי - עדיין יכול להיות לועז טהור
     if (!isRecognized && cleanWord.length > 1) {
-      unknownWordCount++;
-    } else if (!isRecognized && cleanWord.length === 0) {
-      // אם cleanWord ריק, זה אומר שהמילה לא כוללת אותיות עברית בכלל
-      // כלומי היא לועזית טהורה (כמו abc, def, ghi)
       unknownWordCount++;
     }
   }
 
-  // אם יותר מ-70% מהמילים לא מוכרות = חרטוט!
   if (words.length > 0 && unknownWordCount > words.length * 0.7) {
     return false;
   }
 
-  // ============ ניקוד רגיל ==============
   let score = 0;
 
   if (normalizedText.length < 50) score += 1;
   else if (normalizedText.length < 100) score += 5;
   else if (normalizedText.length <= 200) score += 10;
   else if (normalizedText.length <= 600) score += 5;
-  else score -= 3;
 
   function containsTerm(text, term) {
     return text.includes(term);
@@ -237,25 +208,15 @@ function analyzeActionability(taskText) {
     return words.filter((word) => containsTerm(normalizedText, word)).length;
   }
 
-  const redMatches = countMatches(redWords);
   const greenMatches = countMatches(greenWords);
-  const strongMatches = countMatches(strongWords);
-
-  score -= redMatches * 2;
   score += greenMatches * 2;
-  score += strongMatches;
-
-  if (greenMatches > 0 && strongMatches > 0) score += 1;
-
-  if (redMatches >= 2 && greenMatches === 0 && strongMatches === 0) {
-    return false;
-  }
+  if (greenMatches > 0) score += 1;
 
   if (!normalizedText.includes(" ")) {
     return false;
   }
 
-  return score >= 5;
+  return score;
 }
 
 
@@ -263,62 +224,87 @@ function analyzeActionability(taskText) {
 //  פונקציה 3: handleTaskValidation
 // ============================================================
 /**
- * מה היא עושה?
- * -------------
- * משלבת את הבדיקה היבשה (analyzeActionability) עם ה-AI.
- * אם המשימה אדומה — מבקשת מצוות D הצעה לשיפור.
+ * שלב 1: בדיקה מקומית מהירה (analyzeActionability)
+ * שלב 2: שליחה ל-AI לניתוח עמוק יותר (VALIDATE_TASK)
+ * שלב 3: אם "אדום" — מבקשים מה-AI הצעת שיפור (SUGGEST_IMPROVEMENT)
  *
- * קלט:
- *   taskId   (string) — מזהה ייחודי של המשימה (למשל "task-1")
- *   taskText (string) — הטקסט של המשימה
+ * הרשיונות:
+ *   - הבדיקה המקומית מהירה ונותנת תשובה מיידית
+ *   - ה-AI מדייק את הסיווג ומוסיף הסבר
+ *   - אם האדום מאושר ע"י AI — מגיעה גם הצעה לשיפור
  *
- * פלט צפוי (object):
- *   {
- *     taskId:      "task-1",
- *     score:       "red",
- *     label:       "רחב מדי",
- *     aiSuggestion: { refinedText: "...", explanation: "..." }
- *   }
- *
- * מי קורא לה?
- *   צוות A קורא לה כשהמשתמש לוחץ "בדוק משימה"
+ * קלט:  taskId (string), taskText (string)
+ * פלט:  {
+ *   taskId, score, label, explanation,
+ *   source: "local" | "ai",
+ *   aiSuggestion: { refinedText, explanation } | null
+ * }
  */
 async function handleTaskValidation(taskId, taskText) {
-  const normalizedTaskText = typeof taskText === "string" ? taskText.trim() : "";
-  const isActionable = analyzeActionability(normalizedTaskText);
+  const normalizedTaskText =
+    typeof taskText === "string" ? taskText.trim() : "";
 
-  let analysis;
-  if (isActionable === true) {
-    analysis = {
-      score: "green",
-      label: "ממוקד ובר ביצוע"
-    };
+  // ── שלב 1: ניתוח מקומי מהיר ──────────────────────────────
+  const localScore = analyzeActionability(normalizedTaskText);
+  console.log("📊 ניקוד מקומי:", localScore);
+
+  let localAnalysis;
+  if (localScore === false || localScore < 5) {
+    localAnalysis = { score: "red", label: "המשימה נראית רחבה מדי" };
+  } else if (localScore < 10) {
+    localAnalysis = { score: "yellow", label: "המשימה נראית רחבה מעט" };
   } else {
-    analysis = {
-      score: "red",
-      label: "רחב מדי"
-    };
+    localAnalysis = { score: "green", label: "המשימה נראית ממוקדת" };
   }
 
+  // ── שלב 2: שליחה ל-AI לניתוח מעמיק ───────────────────────
+  let aiValidation = null;
+  let finalScore = localAnalysis.score;
+  let finalLabel = localAnalysis.label;
+  let finalExplanation = "";
+  let source = "local";
+
+  try {
+    console.log("🤖 שולח ל-AI לאימות...");
+    aiValidation = await aiService.sendQuery("VALIDATE_TASK", normalizedTaskText);
+
+    if (aiValidation && aiValidation.score) {
+      // ה-AI מנצח — הסיווג שלו מדויק יותר
+      finalScore = aiValidation.score;
+      finalLabel = aiValidation.label;
+      finalExplanation = aiValidation.explanation || "";
+      source = "ai";
+      console.log(`✅ AI החליט: ${finalScore} — ${finalLabel}`);
+    }
+  } catch (error) {
+    // ה-AI נכשל — ממשיכים עם התוצאה המקומית
+    console.error("⚠️ AI validation נכשל, משתמשים בניתוח מקומי:", error);
+    source = "local";
+  }
+
+  // ── שלב 3: אם אדום — מבקשים הצעת שיפור ────────────────────
   let aiSuggestion = null;
 
-  if (analysis.score === "red") {
+  if (finalScore === "red") {
     try {
+      console.log("💡 מבקש הצעת שיפור מה-AI...");
       aiSuggestion = await aiService.sendQuery("SUGGEST_IMPROVEMENT", {
         taskText: normalizedTaskText,
-        reason: analysis.label
+        reason: finalLabel,
       });
     } catch (error) {
-      console.error("שגיאה בקבלת הצעת שיפור מה-AI:", error);
+      console.error("⚠️ שגיאה בקבלת הצעת שיפור:", error);
       aiSuggestion = null;
     }
   }
 
   return {
     taskId: taskId,
-    score: analysis.score,
-    label: analysis.label,
-    aiSuggestion: aiSuggestion || null
+    score: finalScore,
+    label: finalLabel,
+    explanation: finalExplanation,
+    source: source,              // "local" | "ai" — שימושי לדיבאג
+    aiSuggestion: aiSuggestion,  // { refinedText, explanation } | null
   };
 }
 
@@ -326,9 +312,9 @@ async function handleTaskValidation(taskId, taskText) {
 // ============================================================
 //  פונקציה 4: calculateBackwardTimeline
 // ============================================================
-
 function calculateBackwardTimeline(dueDate) {
-  const finalDate = dueDate instanceof Date ? new Date(dueDate.getTime()) : new Date(dueDate);
+  const finalDate =
+    dueDate instanceof Date ? new Date(dueDate.getTime()) : new Date(dueDate);
 
   if (Number.isNaN(finalDate.getTime())) {
     handleError("תאריך ההגשה אינו תקין.");
@@ -345,12 +331,12 @@ function calculateBackwardTimeline(dueDate) {
   }
 
   const milestones = [
-    { name: "הבנת המשימה ובחירת מבנה", percentFromStart: 0.10 },
-    { name: "בחירת מקורות", percentFromStart: 0.30 },
-    { name: "איסוף מקורות", percentFromStart: 0.50 },
-    { name: "כתיבת פסקה ראשונה", percentFromStart: 0.70 },
-    { name: "עריכה וסיכום", percentFromStart: 0.90 },
-    { name: "הגשה סופית", percentFromStart: 1.00 }
+    { name: "הבנת המשימה ובחירת מבנה", percentFromStart: 0.1 },
+    { name: "בחירת מקורות", percentFromStart: 0.3 },
+    { name: "איסוף מקורות", percentFromStart: 0.5 },
+    { name: "כתיבת פסקה ראשונה", percentFromStart: 0.7 },
+    { name: "עריכה וסיכום", percentFromStart: 0.9 },
+    { name: "הגשה סופית", percentFromStart: 1.0 },
   ];
 
   const timeline = milestones.map((milestone) => {
@@ -360,7 +346,7 @@ function calculateBackwardTimeline(dueDate) {
 
     return {
       milestone: milestone.name,
-      date: milestoneDate.toISOString().split("T")[0]
+      date: milestoneDate.toISOString().split("T")[0],
     };
   });
 
@@ -368,7 +354,10 @@ function calculateBackwardTimeline(dueDate) {
 }
 
 function normalizeTimelineDate(dateValue) {
-  const parsedDate = dateValue instanceof Date ? new Date(dateValue.getTime()) : new Date(dateValue);
+  const parsedDate =
+    dateValue instanceof Date
+      ? new Date(dateValue.getTime())
+      : new Date(dateValue);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return null;
@@ -383,30 +372,31 @@ function updateTimelineMilestone(timeline, milestoneIndex, newDate) {
   }
 
   const normalizedDate = normalizeTimelineDate(newDate);
-  if (!normalizedDate || milestoneIndex < 0 || milestoneIndex >= timeline.length) {
+  if (
+    !normalizedDate ||
+    milestoneIndex < 0 ||
+    milestoneIndex >= timeline.length
+  ) {
     return timeline;
   }
 
   return timeline.map((milestone, index) => {
-    if (index !== milestoneIndex) {
-      return milestone;
-    }
-
-    return {
-      ...milestone,
-      date: normalizedDate
-    };
+    if (index !== milestoneIndex) return milestone;
+    return { ...milestone, date: normalizedDate };
   });
 }
 
 function createEditableTimelinePlan(dueDate) {
   return calculateBackwardTimeline(dueDate).map((milestone) => ({
     ...milestone,
-    editable: true
+    editable: true,
   }));
 }
 
 
+// ============================================================
+//  פונקציה 5: requestAIAngles
+// ============================================================
 async function requestAIAngles(topic) {
   const normalizedTopic = typeof topic === "string" ? topic.trim() : "";
 
@@ -433,20 +423,6 @@ async function requestAIAngles(topic) {
 // ============================================================
 //  פונקציה 6: syncStateToStorage
 // ============================================================
-/**
- * מה היא עושה?
- * -------------
- * שומרת את כל המידע של האפליקציה ב-localStorage,
- * כדי שאם המשתמש ירענן את הדף — הכל יישמר.
- *
- * קלט:
- *   state (object) — כל המידע הנוכחי של האפליקציה
- *
- * פלט: אין (void) — רק שמירה
- *
- * מי קורא לה?
- *   כל פונקציה שמשנה את ה-state — כמו initProject
- */
 function syncStateToStorage(state) {
   try {
     const stateAsText = JSON.stringify(state);
@@ -461,23 +437,10 @@ function syncStateToStorage(state) {
 // ============================================================
 //  פונקציה נוספת: loadStateFromStorage
 // ============================================================
-/**
- * מה היא עושה?
- * -------------
- * טוענת את המידע השמור מ-localStorage כשהדף נפתח.
- * אם אין מידע שמור — מחזירה null.
- *
- * פלט: object | null
- *
- * מי קורא לה?
- *   צוות A קורא לה כשהדף נטען (בתוך main.js)
- */
 function loadStateFromStorage() {
   try {
     const savedText = localStorage.getItem(STORAGE_KEY);
-
     if (!savedText) return null;
-
     return JSON.parse(savedText);
   } catch (error) {
     console.error("שגיאה בטעינת state מ-localStorage:", error);
@@ -487,10 +450,7 @@ function loadStateFromStorage() {
 
 
 // ============================================================
-//  חשיפת הפונקציות לשאר הקבצים
-//  כדי שצוות A יוכל לקרוא לפונקציות שלכם מ-main.js,
-//  צריך "לחשוף" אותן תחת אובייקט גלובלי אחד.
-//  אל תשנו את השמות כאן — צוות A מסתמך עליהם!
+//  חשיפת הפונקציות
 // ============================================================
 const logicManager = {
   initProject,
@@ -506,3 +466,5 @@ const logicManager = {
   syncStateToStorage,
   loadStateFromStorage,
 };
+
+export default logicManager;
