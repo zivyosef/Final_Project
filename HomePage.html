@@ -268,6 +268,36 @@ input:focus {
 
 .subtask-add-row { margin-top: 4px; }
 
+/* ── Input card collapse ── */
+#inputCardBody {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+#inputCardBody.collapsed {
+  display: none;
+}
+.input-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(37,99,235,0.1);
+  border: 1px solid rgba(37,99,235,0.25);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.input-toggle-btn:hover {
+  background: rgba(37,99,235,0.18);
+  color: var(--text-bright);
+}
+.input-toggle-arrow { font-size: 0.75rem; color: var(--text-muted); }
+
 /* ===== CARD HEADER ===== */
 .card-header-row {
   font-size: 13px;
@@ -471,41 +501,43 @@ input:focus {
     <!-- ═══ עמודה שמאל: קלט ✦ סיכום ✦ משימות ═══ -->
     <div class="work-col">
 
-      <!-- כרטיס פרטי משימה -->
-      <div class="card-accent">
-        <div class="card-header-row">פרטי המשימה</div>
-        <div class="row">
-          <div><label>מקצוע</label><input type="text" id="subject" placeholder="היסטוריה, מדע..."></div>
-          <div><label>נושא</label><input type="text" id="topic" placeholder="נושא העבודה"></div>
-        </div>
-        <div class="row">
-          <div><label>מספר עמודים</label><input type="number" id="pages" placeholder="5" min="1" max="1000"></div>
-          <div><label>תאריך הגשה</label><input type="date" id="date"></div>
-        </div>
+      <!-- Toggle button — shows when card is collapsed -->
+      <button class="input-toggle-btn" id="inputToggleBtn" onclick="toggleInputCard()" style="display:none">
+        ✏️ פרטי משימה &amp; דרישות
+        <span class="input-toggle-arrow">▼</span>
+      </button>
 
-        <hr class="demands-divider">
+      <!-- כרטיס פרטי משימה (collapsible) -->
+      <div class="card-accent" id="inputCard">
+        <div class="card-header-row" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleInputCard()">
+          <span>פרטי המשימה</span>
+          <span id="inputCollapseArrow" style="font-size:0.8rem;color:var(--text-muted)">▲ סגור</span>
+        </div>
+        <div id="inputCardBody">
+          <div class="row">
+            <div><label>מקצוע</label><input type="text" id="subject" placeholder="היסטוריה, מדע..."></div>
+            <div><label>נושא</label><input type="text" id="topic" placeholder="נושא העבודה"></div>
+          </div>
+          <div class="row">
+            <div><label>מספר עמודים</label><input type="number" id="pages" placeholder="5" min="1" max="1000"></div>
+            <div><label>תאריך הגשה</label><input type="date" id="date"></div>
+          </div>
 
-        <label>דרישות העבודה</label>
-        <textarea id="demands-input" rows="4" placeholder="הדבק כאן את הנחיות המורה / דרישות המטלה..."></textarea>
-        <button class="btn" id="analyze-btn" onclick="handleAnalyzeDemands()">
-          <span id="analyze-spinner" class="spinner hidden"></span>
-          <span id="analyze-label">נתח וצור משימות</span>
-        </button>
+          <hr class="demands-divider">
+
+          <label>דרישות העבודה</label>
+          <textarea id="demands-input" rows="4" placeholder="הדבק כאן את הנחיות המורה / דרישות המטלה..."></textarea>
+          <button class="btn" id="analyze-btn" onclick="handleAnalyzeDemands()">
+            <span id="analyze-spinner" class="spinner hidden"></span>
+            <span id="analyze-label">נתח וצור משימות</span>
+          </button>
+        </div>
       </div>
 
       <!-- סיכום -->
       <div id="summary-card" class="card hidden">
         <div class="section-title">סיכום המשימה</div>
         <div id="summary-content"></div>
-      </div>
-
-      <!-- משימות לביצוע -->
-      <div id="subtasks-card" class="card hidden">
-        <div class="section-title">משימות לביצוע</div>
-        <div id="subtasks-list"></div>
-        <div class="subtask-add-row">
-          <button class="btn btn-outline" onclick="addSubtask()">+ הוסף משימה</button>
-        </div>
       </div>
 
     </div><!-- /work-col left -->
@@ -571,6 +603,15 @@ const MILESTONES = [
 let currentTimeline = [];
 let subtasks = [];
 
+function toggleInputCard() {
+  const body   = document.getElementById('inputCardBody');
+  const arrow  = document.getElementById('inputCollapseArrow');
+  const miniBtn = document.getElementById('inputToggleBtn');
+  const isCollapsed = body.classList.toggle('collapsed');
+  arrow.textContent  = isCollapsed ? '▼ פתח' : '▲ סגור';
+  miniBtn.style.display = isCollapsed ? 'flex' : 'none';
+}
+
 function setLoading(labelId, spinnerId, btnId, on) {
   const labels = { 'analyze-label': ['נתח וצור משימות', 'מנתח...'] };
   document.getElementById(labelId).textContent = on ? labels[labelId][1] : labels[labelId][0];
@@ -633,6 +674,9 @@ async function handleAnalyzeDemands() {
         `<div style="text-align:center;padding:24px;color:#ef4444">לא הצלחנו לנתח את הדרישות. נסה לנסח אותן בצורה ברורה יותר.</div>`;
     } else {
       rebuildTimeline(); // computes dates then calls buildChecklist
+      // Auto-collapse the input card now that tasks are generated
+      const body = document.getElementById('inputCardBody');
+      if (!body.classList.contains('collapsed')) toggleInputCard();
     }
   } catch (e) {
     console.error('שגיאה בניתוח דרישות:', e);
