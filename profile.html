@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 
 <head>
@@ -921,7 +921,7 @@
                         <li><b id="taskCount">0</b> משימות שבוצעו</li>
                     </ul>
                     <div class="bio">
-                        <b id="userFullName"> שם פרטי/b><br>
+                        <b id="userFullName">שם פרטי</b><br>
                         <span id="userDescription">תיאור המשתמש</span>
                     </div>
 
@@ -951,6 +951,92 @@
 
         </div>
     </div>
+
+
+
+    <div class="page">
+    <!-- Progress Section -->
+    <section class="progress-section"><h2>📊 התקדמות שלך</h2>
+
+        <div class="progress-grid">
+            <!-- מטרות שבועיות -->
+            <div class="progress-card">
+                <div class="progress-card-title">🎯 מטרות שבועיות</div>
+                <div class="goals-input-group">
+                    <input type="text" id="goalInput" placeholder="הוסף מטרה חדשה..."
+                           onkeydown="if(event.key==='Enter') addWeeklyGoal()">
+                    <button onclick="addWeeklyGoal()">הוסף</button>
+                </div>
+                <div class="goals-list" id="goalsList"></div>
+                <div class="goals-actions">
+                    <button class="goals-reset-btn" onclick="resetWeeklyGoals()">🗑 אפס מטרות שבועיות</button>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="goalsProgressBar" style="width:0%"></div>
+                </div>
+                <div class="progress-percentage" id="goalsPercentage">0/0 משימות הושלמו</div>
+            </div>
+
+            <div class="progress-card">
+                <div class="progress-card-title">✅ משימות שהושלמו</div>
+                <div class="stat-value" id="progressCompleted">0</div>
+                <div class="stat-label">משימות שהושלמו השבוע</div>
+            </div>
+
+            <div class="progress-card">
+                <div class="progress-card-title">📈 פעילות השבוע</div>
+                <div class="stat-value" id="progressWeeklyActivity">0</div>
+                <div class="stat-label">פעילויות במהלך השבוע האחרון</div>
+            </div>
+
+            <!-- טיפ יומי -->
+            <div class="progress-card">
+                <div class="progress-card-title">💡 טיפ יומי</div>
+                <div class="tip-content">
+                    <div class="tip-icon" id="tipIcon">💡</div>
+                    <div class="tip-text" id="tipText">טוען טיפ...</div>
+                </div>
+                <button class="tip-button" onclick="getNewTip()">טיפ חדש</button>
+            </div>
+        </div>
+
+        <div class="progress-extra">
+            <div class="upcoming-section">
+                <h2>📅 משימות קרובות</h2>
+                <div id="upcomingList"></div>
+            </div>
+
+            <div class="timeline-section">
+                <h2>🗺️ ציר זמן פרויקט נוכחי</h2>
+                <div id="projectTimeline"></div>
+            </div>
+             <a class="back-link" href="index.html">← חזור לדף הבית</a>
+        </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>עריכת פרופיל</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form onsubmit="saveProfileChanges(event)">
+                <div class="form-group">
+                    <label for="editFullName">שם מלא</label>
+                    <input type="text" id="editFullName" placeholder="הזן שם מלא" required>
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">תיאור</label>
+                    <textarea id="editDescription" placeholder="הזן תיאור קצר עלייך"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">ביטול</button>
+                    <button type="submit" class="btn-save">שמור שינויים</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
 
     <div class="page">
@@ -1058,14 +1144,27 @@
         }
 
         // פונקציה שתטפל בלחיצה על כפתור הכניסה
+        function updateHeaderButton() {
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            const loginBtn = document.getElementById('loginBtn');
+            if (!loginBtn) return;
+
+            if (userProfile && userProfile.username) {
+                loginBtn.textContent = `ברוך הבא ${userProfile.username}`;
+                loginBtn.style.background = 'rgba(37, 99, 235, 0.18)';
+                loginBtn.style.border = '1px solid rgba(37, 99, 235, 0.3)';
+            } else {
+                loginBtn.textContent = 'התחברות';
+                loginBtn.style.background = '';
+                loginBtn.style.border = '';
+            }
+        }
+
         function handleHeaderButtonClick() {
             const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-            
             if (userProfile && userProfile.username) {
-                // המשתמש מחובר - אפשר להוסיף פעולת התנתקות או לחזור לדף הבית
                 window.location.href = 'index.html';
             } else {
-                // המשתמש לא מחובר - לך לדף הבית כדי להתחבר
                 window.location.href = 'index.html';
             }
         }
@@ -1079,9 +1178,29 @@
             description: 'תלמיד כיתה י"א | מתמחה בביולוגיה 📚',
             projectCount: 5,
             taskCount: 12,
-            learningScore: '85%',
+    
         };
 
+        function getStoredProfile() {
+            return JSON.parse(localStorage.getItem('userProfile') || 'null') || defaultProfile;
+        }
+
+        function saveProfileData(profile) {
+            localStorage.setItem('userProfile', JSON.stringify(profile));
+        }
+
+        function getStoredActivityHistory() {
+            return JSON.parse(localStorage.getItem('activityHistory') || '[]');
+        }
+
+        function saveActivityHistory(history) {
+            localStorage.setItem('activityHistory', JSON.stringify(history));
+        }
+
+        function renderProfile(profileData) {
+            const displayName = profileData.fullName || profileData.username || defaultProfile.fullName;
+            document.getElementById('profileName').textContent = displayName;
+            document.getElementById('userFullName').textContent = profileData.fullName || displayName;
         let currentProfileData = defaultProfile;
         let currentActivityHistory = JSON.parse(localStorage.getItem('activityHistory') || '[]');
 
@@ -1110,80 +1229,362 @@
             document.getElementById('profileName').textContent     = profileData.username;
             document.getElementById('userFullName').textContent    = profileData.fullName   || defaultProfile.fullName;
             document.getElementById('userDescription').textContent = profileData.description || defaultProfile.description;
-            document.getElementById('projectCount').textContent    = profileData.projectCount || defaultProfile.projectCount;
-            document.getElementById('taskCount').textContent       = profileData.taskCount    || defaultProfile.taskCount;
-            document.getElementById('learningScore').textContent   = profileData.learningScore || defaultProfile.learningScore;
+            document.getElementById('projectCount').textContent = profileData.projectCount || defaultProfile.projectCount;
+            document.getElementById('taskCount').textContent = profileData.taskCount || defaultProfile.taskCount;
+        }
 
-        const tableBody = document.querySelector('tbody');
-        tableBody.innerHTML = activityHistory.length
-            ? activityHistory.map(entry => `
-                <tr>
-                    <td>${entry.date}</td>
-                    <td>${entry.action}</td>
-                    <td>${entry.details}</td>
-                </tr>`).join('')
-            : '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;">אין פעולות להצגה עדיין.</td></tr>';
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function () {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
-        document.querySelector('.edit-btn').addEventListener('click', () => {
-            const newUsername = prompt('הכנס שם משתמש חדש:', currentProfileData.username);
-            if (newUsername === null) return;
-
-            const newFullName = prompt('הכנס שם מלא:', currentProfileData.fullName);
-            if (newFullName === null) return;
-
-            const newDescription = prompt('הכנס תיאור פרופיל:', currentProfileData.description);
-            if (newDescription === null) return;
-
-            const newProjectCount = prompt('הכנס מספר פרויקטים:', currentProfileData.projectCount);
-            if (newProjectCount === null) return;
-
-            const newTaskCount = prompt('הכנס מספר משימות שבוצעו:', currentProfileData.taskCount);
-            if (newTaskCount === null) return;
-
-            const newLearningScore = prompt('הכנס ציון למידה (לדוגמה: 90%):', currentProfileData.learningScore);
-            if (newLearningScore === null) return;
-
-            currentProfileData.username = newUsername.trim() || currentProfileData.username;
-            currentProfileData.fullName = newFullName.trim() || currentProfileData.fullName;
-            currentProfileData.description = newDescription.trim() || currentProfileData.description;
-            currentProfileData.projectCount = Number(newProjectCount) || currentProfileData.projectCount;
-            currentProfileData.taskCount = Number(newTaskCount) || currentProfileData.taskCount;
-            currentProfileData.learningScore = newLearningScore.trim() || currentProfileData.learningScore;
-
-            localStorage.setItem('userProfile', JSON.stringify(currentProfileData));
-
-            const now = new Date();
-            const date = now.toLocaleDateString('he-IL');
-            currentActivityHistory.unshift({ date, action: 'עדכון פרופיל', details: 'השינוי נשמר בהצלחה' });
-            if (currentActivityHistory.length > 20) currentActivityHistory.length = 20;
-            localStorage.setItem('activityHistory', JSON.stringify(currentActivityHistory));
-
-            document.getElementById('profileName').textContent    = currentProfileData.username;
-            document.getElementById('userFullName').textContent   = currentProfileData.fullName;
-            document.getElementById('userDescription').textContent = currentProfileData.description;
-            document.getElementById('projectCount').textContent   = currentProfileData.projectCount;
-            document.getElementById('taskCount').textContent      = currentProfileData.taskCount;
-            document.getElementById('learningScore').textContent  = currentProfileData.learningScore;
-
+        function renderActivityHistory(history) {
             const tableBody = document.querySelector('tbody');
-            tableBody.innerHTML = currentActivityHistory.length
-                ? currentActivityHistory.map(entry => `
+            tableBody.innerHTML = history.length
+                ? history.map(entry => `
                     <tr>
                         <td>${entry.date}</td>
                         <td>${entry.action}</td>
                         <td>${entry.details}</td>
                     </tr>`).join('')
                 : '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;">אין פעולות להצגה עדיין.</td></tr>';
+        }
 
-            alert('הפרופיל עודכן ונשמר בהצלחה!');
+        function initProfile() {
+            const profileData = getStoredProfile();
+            renderProfile(profileData);
+            renderActivityHistory(getStoredActivityHistory());
+            updateHeaderButton();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initProfile();
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
         });
+
+        const dailyTips = [
+    { icon: '💡', text: 'פרק את המטרות שלך לחלקים קטנים יותר — כך תישאר ממוקד ומוטיבציה.' },
+    { icon: '🚀', text: 'התחל את היום עם משימה קלה כדי לבנות תנופה!' },
+    { icon: '⏱️', text: 'טכניקת Pomodoro: 25 דקות עבודה, 5 דקות הפסקה. מוכח מדעית.' },
+    { icon: '🎯', text: 'דרג משימות לפי חשיבות ודחיפות — התמקד בחשובות ביותר קודם.' },
+    { icon: '📝', text: 'תעד את ההתקדמות שלך — זה מעורר השראה ומגביר ביטחון.' },
+    { icon: '🌟', text: 'שמור על איזון בין עבודה ומנוחה — המוח זקוק לשניהם.' },
+    { icon: '💪', text: 'כל יום קטן של התקדמות עדיף על יום ללא פעולה.' },
+    { icon: '🔄', text: 'סקור את ההתקדמות שלך בסוף כל יום וכוונן מטרות בהתאם.' }
+];
+
+const MILESTONES_LABELS = [
+    { name: 'הבנת המשימה ובחירת מבנה', p: 0.10 },
+    { name: 'בחירת מקורות',             p: 0.30 },
+    { name: 'איסוף מקורות',              p: 0.50 },
+    { name: 'כתיבת פסקה ראשונה',        p: 0.70 },
+    { name: 'עריכה וסיכום',              p: 0.90 },
+    { name: 'הגשה סופית',               p: 1.00 }
+];
+
+function initProgress() {
+    loadStatCards();
+    loadWeeklyGoals();
+    getNewTip();
+    loadUpcomingTasks();
+    loadProjectTimeline();
+}
+
+/* ===== STAT CARDS ===== */
+function loadStatCards() {
+    const goals      = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    const completed  = goals.filter(g => g.completed).length;
+    const actData    = JSON.parse(localStorage.getItem('activityData') || '[]');
+    const weeklySum  = actData.slice(-7).reduce((s, d) => s + d.count, 0);
+
+    document.getElementById('progressCompleted').textContent    = completed;
+    document.getElementById('progressWeeklyActivity').textContent = weeklySum;
+}
+
+/* ===== WEEKLY GOALS ===== */
+function addWeeklyGoal() {
+    const input = document.getElementById('goalInput');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    const goals = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    goals.push({ id: Date.now(), text, completed: false, createdAt: new Date().toISOString() });
+    localStorage.setItem('weeklyGoals', JSON.stringify(goals));
+    input.value = '';
+    renderGoals();
+    updateGoalsProgress();
+    loadStatCards();
+}
+
+function renderGoals() {
+    const goals = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    const list  = document.getElementById('goalsList');
+    list.innerHTML = goals.length ? goals.map(g => `
+        <div class="goal-item${g.completed ? ' completed' : ''}">
+            <input type="checkbox" ${g.completed ? 'checked' : ''} onchange="toggleGoal(${g.id})">
+            <div class="goal-text">${escapeHtml(g.text)}</div>
+            <button class="goal-delete" onclick="deleteGoal(${g.id})">✕</button>
+        </div>`).join('') : '<div style="text-align:center;color:var(--text-muted);font-size:0.88rem;padding:12px 0;">אין מטרות עדיין — הוסף אחת!</div>';
+}
+
+function toggleGoal(id) {
+    const goals = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    const g     = goals.find(g => g.id === id);
+    if (g) { g.completed = !g.completed; localStorage.setItem('weeklyGoals', JSON.stringify(goals)); }
+    renderGoals();
+    updateGoalsProgress();
+    loadStatCards();
+}
+
+function deleteGoal(id) {
+    const goals = JSON.parse(localStorage.getItem('weeklyGoals') || '[]').filter(g => g.id !== id);
+    localStorage.setItem('weeklyGoals', JSON.stringify(goals));
+    renderGoals();
+    updateGoalsProgress();
+    loadStatCards();
+}
+
+function resetWeeklyGoals() {
+    if (!confirm('למחוק את כל המטרות השבועיות?')) return;
+    localStorage.removeItem('weeklyGoals');
+    renderGoals();
+    updateGoalsProgress();
+    loadStatCards();
+}
+
+function loadWeeklyGoals() { renderGoals(); updateGoalsProgress(); }
+
+function updateGoalsProgress() {
+    const goals      = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    const completed  = goals.filter(g => g.completed).length;
+    const total      = goals.length;
+    const pct        = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+    document.getElementById('goalsProgressBar').style.width = pct + '%';
+    document.getElementById('goalsPercentage').textContent  = `${completed}/${total} משימות הושלמו`;
+}
+
+/* ===== DAILY TIP ===== */
+function getNewTip() {
+    const tip = dailyTips[Math.floor(Math.random() * dailyTips.length)];
+    document.getElementById('tipIcon').textContent = tip.icon;
+    document.getElementById('tipText').textContent = tip.text;
+}
+
+/* ===== UPCOMING TASKS ===== */
+function loadUpcomingTasks() {
+    const container = document.getElementById('upcomingList');
+
+    // Collect tasks: from weeklyGoals with dates + any saved project state
+    const goals = JSON.parse(localStorage.getItem('weeklyGoals') || '[]');
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Try to read saved project from decompose_app_state
+    let projectTasks = [];
+    try {
+        const state = JSON.parse(localStorage.getItem('decompose_app_state') || 'null');
+        if (state && state.dueDate && state.topic) {
+            projectTasks.push({
+                title: `עבודה: ${state.topic}`,
+                dueDate: state.dueDate,
+                color: '#a78bfa'
+            });
+        }
+    } catch(e) {}
+
+    const allTasks = [
+        ...projectTasks,
+        ...goals.filter(g => !g.completed && g.createdAt).map(g => ({
+            title: g.text,
+            dueDate: null,
+            color: '#60a5fa'
+        }))
+    ].filter(t => t.dueDate !== null || t.color).slice(0, 5);
+
+    if (projectTasks.length === 0 && goals.filter(g => !g.completed).length === 0) {
+        container.innerHTML = `<div class="upcoming-empty">
+            אין משימות קרובות. <a href="HomePage.html">צור פרויקט חדש</a> כדי להתחיל.
+        </div>`;
+        return;
+    }
+
+    // Show pending goals
+    const pendingGoals = goals.filter(g => !g.completed).slice(0, 4);
+    if (pendingGoals.length === 0 && projectTasks.length === 0) {
+        container.innerHTML = `<div class="upcoming-empty">כל המטרות הושלמו! 🎉<br><a href="HomePage.html">פתח פרויקט חדש</a></div>`;
+        return;
+    }
+
+    const items = [
+        ...projectTasks.map(t => {
+            const due   = new Date(t.dueDate);
+            const diff  = Math.ceil((due - today) / 86400000);
+            const cls   = diff <= 2 ? 'days-urgent' : diff <= 7 ? 'days-soon' : 'days-ok';
+            const label = diff < 0 ? 'עבר!' : diff === 0 ? 'היום!' : `עוד ${diff} ימים`;
+            return `<div class="upcoming-item">
+                <div class="upcoming-dot" style="background:${t.color}"></div>
+                <div class="upcoming-text">
+                    <div class="upcoming-title">${escapeHtml(t.title)}</div>
+                    <div class="upcoming-date">הגשה: ${t.dueDate}</div>
+                </div>
+                <span class="upcoming-days ${cls}">${label}</span>
+            </div>`;
+        }),
+        ...pendingGoals.map(g => `<div class="upcoming-item">
+            <div class="upcoming-dot" style="background:#60a5fa"></div>
+            <div class="upcoming-text">
+                <div class="upcoming-title">${escapeHtml(g.text)}</div>
+                <div class="upcoming-date">מטרה שבועית</div>
+            </div>
+            <span class="upcoming-days days-ok">בתהליך</span>
+        </div>`)
+    ];
+
+    container.innerHTML = items.join('') || `<div class="upcoming-empty">אין משימות להצגה. <a href="HomePage.html">פתח פרויקט חדש</a></div>`;
+}
+
+/* ===== PROJECT TIMELINE ===== */
+function loadProjectTimeline() {
+    const container = document.getElementById('projectTimeline');
+
+    let state = null;
+    try { state = JSON.parse(localStorage.getItem('decompose_app_state') || 'null'); } catch(e) {}
+
+    if (!state || !state.dueDate) {
+        container.innerHTML = `<div class="no-project-cta">
+            <div style="font-size:2rem;margin-bottom:10px;">📋</div>
+            <div>עדיין לא התחלת פרויקט.<br>
+                <small style="color:var(--text-muted);">הקישור שלמטה ייפתח את דף העבודה.</small>
+            </div>
+            <a href="HomePage.html" class="cta-link">התחל פרויקט חדש</a>
+        </div>`;
+        return;
+    }
+
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const dueDate  = new Date(state.dueDate);
+    const total    = Math.max(1, Math.round((dueDate - new Date(state.startDate || today)) / 86400000));
+    const elapsed  = Math.round((today - new Date(state.startDate || today)) / 86400000);
+    const progress = Math.min(1, Math.max(0, elapsed / total));
+
+    const items = MILESTONES_LABELS.map((m, i) => {
+        const isDone    = progress >= m.p;
+        const isCurrent = !isDone && (i === 0 || progress >= MILESTONES_LABELS[i-1].p);
+        const milestoneDate = new Date(new Date(state.startDate || today).getTime() + m.p * total * 86400000);
+        const dotClass = isDone ? 'done' : isCurrent ? 'current' : '';
+
+        return `<div class="milestone-item">
+            <div class="milestone-dot-wrap">
+                <div class="milestone-dot ${dotClass}"></div>
+                ${i < MILESTONES_LABELS.length - 1 ? '<div class="milestone-connector"></div>' : ''}
+            </div>
+            <div class="milestone-info">
+                <div class="milestone-name">${m.name}</div>
+                <div class="milestone-date">${milestoneDate.toLocaleDateString('he-IL')}</div>
+            </div>
+            <div class="milestone-pct">${Math.round(m.p*100)}%</div>
+        </div>`;
+    });
+
+    container.innerHTML = `
+        <div style="margin-bottom:16px;color:var(--text-muted);font-size:0.88rem;">
+            פרויקט: <strong style="color:var(--text-bright);">${escapeHtml(state.topic || '')}</strong>
+            | הגשה: <strong style="color:var(--text-bright);">${state.dueDate}</strong>
+        </div>
+        ${items.join('')}
+    `;
+}
+
+function escapeHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initProgress();
+});
+    </script>
+    <script>
+        (function() {
+            // defaultProfile כבר מוגדר בסקריפט העליון של הדף
+
+            function getStoredProfile() {
+                return JSON.parse(localStorage.getItem('userProfile') || 'null') || defaultProfile;
+            }
+
+            function saveStoredProfile(profile) {
+                localStorage.setItem('userProfile', JSON.stringify(profile));
+            }
+
+            function renderProfile(profile) {
+                const displayName = profile.fullName || profile.username || '';
+                document.getElementById('profileName').textContent = displayName;
+                document.getElementById('userFullName').textContent = profile.fullName || displayName;
+                document.getElementById('userDescription').textContent = profile.description || '';
+                document.getElementById('projectCount').textContent = profile.projectCount || 0;
+                document.getElementById('taskCount').textContent = profile.taskCount || 0;
+            }
+
+            function renderActivityHistory(history) {
+                const tableBody = document.querySelector('tbody');
+                tableBody.innerHTML = history.length
+                    ? history.map(entry => `
+                        <tr>
+                            <td>${entry.date}</td>
+                            <td>${entry.action}</td>
+                            <td>${entry.details}</td>
+                        </tr>`).join('')
+                    : '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;">אין פעולות להצגה עדיין.</td></tr>';
+            }
+
+            // העריכה תטופל על ידי openEditModal / saveProfileChanges
+        })();
+        // פונקציות עריכת פרופיל
+        window.addEventListener('DOMContentLoaded', initProfile);
+        
+        // פונקציות עריכת פרופיל
+        function openEditModal() {
+            const profile = getStoredProfile();
+            document.getElementById('editFullName').value = profile.fullName || profile.username || '';
+            document.getElementById('editDescription').value = profile.description || '';
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        function saveProfileChanges(event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById('editFullName').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+
+            if (!fullName) {
+                alert('יש להזין שם מלא');
+                return;
+            }
+
+            const profile = getStoredProfile();
+            profile.fullName = fullName;
+            profile.description = description;
+            saveProfileData(profile);
+
+            renderProfile(profile);
+            updateHeaderButton();
+
+            const history = getStoredActivityHistory();
+            history.unshift({
+                date: new Date().toLocaleDateString('he-IL'),
+                action: 'עדכון פרופיל',
+                details: 'שם פרטי ותיאור עודכנו'
+            });
+            if (history.length > 20) history.length = 20;
+            saveActivityHistory(history);
+            renderActivityHistory(history);
+
+            alert('הפרטים שלך עודכנו בהצלחה!');
+            closeEditModal();
+        }
 
         initProfile();
 
@@ -1505,6 +1906,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         })();
     </script>
+
 </body>
 
 </html>
