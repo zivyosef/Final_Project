@@ -483,13 +483,24 @@ input:focus {
 <script type="module" src="./logicManager.js"></script>
 
 <script>
-/* All page logic is in a plain (non-module) script so that onclick handlers
-   are defined on window immediately — no import-chain failure can block them. */
-const logicManager = new Proxy({}, {
-  get(_, key) {
-    return window.logicManager?.[key];
+  window.GEMINI_API_KEY    = 'AIzaSyClpw7Ln7W1VazfnOh-H9xVsRuxM4DRzEs';
+  window.TAVILY_API_KEY    = 'your-tavily-api-key-here';
+  window.SUPABASE_URL      = 'https://fflgijtemitvpjwiofue.supabase.co';
+  window.SUPABASE_ANON_KEY = 'sb_publishable_5NMPAK52g1LVFZU5fdmQCw_Nf7UXex5';
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai":         "https://esm.sh/@google/genai",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
   }
-});
+}
+</script>
+<script type="module">
+import './aiService.js';
+import logicManager from './logicManager.js';
+import { getCurrentUser, saveTaskState, loadTaskState } from './supabase.js';
+window.supabaseHelpers = { getCurrentUser, saveTaskState, loadTaskState };
 
 const MILESTONES = [
   { name: "הבנת המשימה ובחירת מבנה", p: 0.10 },

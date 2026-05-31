@@ -563,8 +563,56 @@ async function loadStateFromStorage() {
 
 
 // ============================================================
-//  חשיפת הפונקציות
+//  פונקציה 8: fetchTavilySources (פנייה ישירה מהדפדפן)
 // ============================================================
+async function fetchTavilySources(state) {
+  if (!state || !state.topic) {
+    console.warn("⚠️ לא ניתן לחפש מקורות: חסר נושא (topic) במצב האפליקציה הנוכחי.");
+    return [];
+  }
+
+  console.log(`🔵 [logicManager] מפעיל חישוף מקורות ישיר מול Tavily עבור הנושא: ${state.topic}`);
+
+  // הנדסת שאילתה דינמית ישירות בדפדפן
+  const optimizedQuery = `"${state.topic}" reliable academic sources bibliography ${state.subject || ''} ${state.assignmentType || ''}`.trim().replace(/\s+/g, ' ');
+  console.log(`🔍 שאילתת חיפוש מיוטבת ל-Tavily: ${optimizedQuery}`);
+
+  // שליפת המפתח מתוך ה-window (נגדיר אותו ב-HomePage.html)
+  const apiKey = window.TAVILY_API_KEY;
+  if (!apiKey) {
+    console.error("❌ לא נמצא מפתח API עבור Tavily ב-window.TAVILY_API_KEY");
+    return [];
+  }
+
+  try {
+    // פנייה ישירה לשרתים של Tavily ללא תיווך שרת פנימי
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query: optimizedQuery,
+        search_depth: "advanced"
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`תגובת שרת Tavily לא תקינה: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("✅ מקורות התקבלו מ-Tavily בהצלחה:", data.results);
+    return data.results || [];
+
+  } catch (error) {
+    console.error("❌ שגיאה בשליפת מקורות מ-Tavily:", error);
+    return [];
+  }
+}
+
+// החשפת הפונקציות בגרסה המעודכנת
 const logicManager = {
   initProject,
   validatePageCount,
@@ -579,8 +627,7 @@ const logicManager = {
   analyzeDemandsAndCreateSubtasks,
   syncStateToStorage,
   loadStateFromStorage,
-  addNotificationToGoogleCalendar,
-  checkAndSendDailyReminder,
+  fetchTavilySources, 
 };
 
 window.logicManager = logicManager;
