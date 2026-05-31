@@ -340,6 +340,20 @@ input:focus {
   padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
 }
 .hl-children { margin-top: 6px; }
+
+/* Unified task description + date-input per task */
+.hl-desc {
+  font-size: 0.8rem; color: var(--text-muted); line-height: 1.55;
+  margin: 6px 0 0 24px; padding-right: 4px;
+}
+.hl-date-input {
+  font-size: 0.72rem; color: #a78bfa; background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.28); border-radius: 8px;
+  padding: 3px 7px; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+.hl-date-input:focus { outline: none; border-color: #a78bfa; background: rgba(124,58,237,0.18); }
+.hl-date-input::-webkit-calendar-picker-indicator { filter: invert(0.6) sepia(1) saturate(3) hue-rotate(220deg); }
 .hl-btn-row {
   display: flex; gap: 10px; margin-top: 16px;
 }
@@ -444,7 +458,8 @@ input:focus {
     <nav>
       <a href="index.html">דף הבית</a>
       <a href="HomePage.html" class="active">דף עבודה</a>
-      <a href="search.html">חיפוש</a>
+      <a href="writing.html">כתיבה</a>
+            <a href="search.html">חיפוש</a>
       <a href="profile.html">פרופיל</a>
       <a href="about.html">אודות</a>
     </nav>
@@ -498,25 +513,15 @@ input:focus {
     <!-- ═══ עמודה ימין: לוח זמנים ✦ רשימת משימות ═══ -->
     <div class="work-col">
 
-      <!-- לוח זמנים -->
-      <div class="card">
-        <div class="section-title">לוח זמנים מותאם אישית</div>
-        <p style="font-size:14px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
-          המערכת בונה תוכנית לפי תאריך ההגשה — אפשר לשנות כל שלב ידנית.
-        </p>
-        <div id="timeline-list">
-          <div class="timeline-empty">עדיין לא נבנה לוח זמנים.</div>
+      <!-- Unified task + timeline + checklist -->
+      <div id="checklist-card" class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid rgba(148,163,184,0.12)">
+          <span class="section-title" style="margin:0;padding:0;border:none">משימות ולוח זמנים</span>
+          <button class="btn btn-outline btn-sm" onclick="rebuildTimeline()" style="margin-top:0">↺ בנה מחדש</button>
         </div>
-        <div class="timeline-actions">
-          <button class="btn btn-outline" onclick="rebuildTimeline()">בנה לוח זמנים</button>
-          <button class="btn btn-outline" onclick="resetTimeline()">אפס שינויים</button>
+        <div id="hierarchicalChecklist">
+          <div class="timeline-empty">הזן דרישות עבודה ולחץ "נתח וצור משימות".</div>
         </div>
-      </div>
-
-      <!-- Hierarchical Checklist + Compile -->
-      <div id="checklist-card" class="card hidden">
-        <div class="section-title">✅ רשימת משימות מפורטת</div>
-        <div id="hierarchicalChecklist"></div>
       </div>
 
     </div><!-- /work-col right -->
@@ -627,10 +632,7 @@ async function handleAnalyzeDemands() {
       document.getElementById('hierarchicalChecklist').innerHTML =
         `<div style="text-align:center;padding:24px;color:#ef4444">לא הצלחנו לנתח את הדרישות. נסה לנסח אותן בצורה ברורה יותר.</div>`;
     } else {
-      renderSubtasks();
-      document.getElementById('subtasks-card').classList.remove('hidden');
-      rebuildTimeline(); // builds timeline from AI subtasks with spread dates
-      buildChecklist();  // reads those dates from currentTimeline
+      rebuildTimeline(); // computes dates then calls buildChecklist
     }
   } catch (e) {
     console.error('שגיאה בניתוח דרישות:', e);
@@ -665,7 +667,6 @@ function deleteSubtask(i) {
   subtasks.splice(i, 1);
   renderSubtasks();
   rebuildTimeline();
-  buildChecklist();
 }
 
 function addSubtask() {
@@ -673,30 +674,18 @@ function addSubtask() {
   renderSubtasks();
   document.getElementById('subtasks-card').classList.remove('hidden');
   rebuildTimeline();
-  const items = document.querySelectorAll('.subtask-item input[type="text"]');
-  if (items.length) items[items.length - 1].focus();
 }
 
 function rebuildTimeline() {
   const dateVal = document.getElementById('date').value;
-  const list    = document.getElementById('timeline-list');
-
-  if (!dateVal) {
-    list.innerHTML = '<div class="timeline-empty">בחר תאריך הגשה כדי לבנות תוכנית.</div>';
-    currentTimeline = [];
-    return;
-  }
+  if (!dateVal) { buildChecklist(); return; }
 
   const finalDate = new Date(dateVal);
-  if (isNaN(finalDate.getTime())) {
-    list.innerHTML = '<div class="timeline-empty">תאריך לא תקין.</div>';
-    return;
-  }
+  if (isNaN(finalDate.getTime())) { buildChecklist(); return; }
 
   const today = new Date(); today.setHours(0,0,0,0);
 
   if (subtasks.length > 0) {
-    // ── AI subtasks mode: spread tasks across the available time ──
     const sched = computeSchedule(subtasks, today, finalDate);
     currentTimeline = subtasks.map((task, i) => ({
       title:   task.title,
@@ -704,7 +693,6 @@ function rebuildTimeline() {
       timeStr: sched[i].timeStr,
     }));
   } else {
-    // ── Fallback: fixed milestone percentages ──
     const totalDays = Math.max(0, Math.round((finalDate - today) / 86400000));
     currentTimeline = MILESTONES.map(m => {
       const d = new Date(today);
@@ -713,26 +701,16 @@ function rebuildTimeline() {
     });
   }
 
-  renderTimeline();
+  buildChecklist();
 }
 
-function renderTimeline() {
-  document.getElementById('timeline-list').innerHTML = currentTimeline.map((item, i) => `
-    <div class="timeline-item">
-      <strong>${item.title}</strong>
-      <input type="date" value="${item.date}" aria-label="${item.title}" id="tl-${i}">
-      <button class="btn btn-outline btn-sm" onclick="saveMilestone(${i})">שמור</button>
-    </div>`).join('');
-}
-
-function saveMilestone(i) {
-  const val = document.getElementById(`tl-${i}`).value;
-  if (val) currentTimeline[i].date = val;
-  renderTimeline();
-  buildChecklist(); // sync checklist dates when user edits timeline
-}
-
-function resetTimeline() { rebuildTimeline(); }
+// Called when user changes a date directly inside a task row
+window.updateTaskDate = function(i, val) {
+  if (val && currentTimeline[i]) {
+    currentTimeline[i].date = val;
+    buildChecklist();
+  }
+};
 
 // (all functions above are global in a plain script — no window.* assignments needed)
 
@@ -766,31 +744,33 @@ function computeSchedule(subtasks, today, due) {
 }
 
 function buildChecklist() {
-  if (!subtasks.length) return;
+  const container = document.getElementById('hierarchicalChecklist');
 
-  const card = document.getElementById('checklist-card');
-  card.classList.remove('hidden');
+  if (!subtasks.length) {
+    container.innerHTML = '<div class="timeline-empty">הזן דרישות עבודה ולחץ "נתח וצור משימות".</div>';
+    return;
+  }
 
-  const container  = document.getElementById('hierarchicalChecklist');
   const completion = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}');
   const dateVal    = document.getElementById('date').value;
   const today      = new Date(); today.setHours(0,0,0,0);
   const due        = dateVal ? new Date(dateVal) : new Date(today.getTime() + 14 * 86400000);
 
-  // Use currentTimeline dates when they match; fall back to a fresh computeSchedule
+  // Resolve per-task date/time: prefer currentTimeline, fall back to fresh schedule
   const baseSchedule = computeSchedule(subtasks, today, due);
   const schedule = baseSchedule.map((s, i) => {
-    if (currentTimeline.length === subtasks.length && currentTimeline[i]?.date) {
-      const d = new Date(currentTimeline[i].date);
+    const tl = currentTimeline.length === subtasks.length ? currentTimeline[i] : null;
+    if (tl?.date) {
+      const d = new Date(tl.date);
       return {
+        isoDate: tl.date,
         dateFmt: d.toLocaleDateString('he-IL', { weekday:'short', day:'numeric', month:'short' }),
-        timeStr: currentTimeline[i].timeStr || s.timeStr,
+        timeStr: tl.timeStr || s.timeStr,
       };
     }
     return s;
   });
 
-  // Parse description sentences into Level-3 steps
   function parseSteps(desc) {
     if (!desc) return [];
     return desc.split(/\.\s+|[\n;]/)
@@ -805,7 +785,7 @@ function buildChecklist() {
     const taskDone = !!completion[taskId];
     totalItems++; if (taskDone) doneItems++;
 
-    const { dateFmt, timeStr } = schedule[i];
+    const { isoDate, timeStr } = schedule[i];
     const steps     = parseSteps(task.description);
     const stepsHtml = steps.map((step, si) => {
       const stepId   = `step-${task.id || i}-${si}`;
@@ -825,9 +805,11 @@ function buildChecklist() {
         <label class="hl-level1-label ${taskDone ? 'hl-done' : ''}" for="${taskId}">
           ${escapeHtml(task.title)}
         </label>
-        <span class="hl-date-badge">${dateFmt}</span>
+        <input type="date" class="hl-date-input" value="${isoDate || ''}"
+               onchange="window.updateTaskDate(${i}, this.value)" title="שנה תאריך">
         <span class="hl-time-badge">${timeStr}</span>
       </div>
+      ${task.description ? `<div class="hl-desc">${escapeHtml(task.description)}</div>` : ''}
       ${stepsHtml ? `<div class="hl-children">${stepsHtml}</div>` : ''}
     </div>`;
   }).join('');

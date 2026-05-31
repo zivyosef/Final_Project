@@ -118,6 +118,7 @@
             <a href="index.html">דף הבית</a>
             <a href="HomePage.html">דף עבודה</a>
             <a href="RecuresiveDecomposition.html">התקדמות</a>
+            <a href="writing.html">כתיבה</a>
             <a href="search.html">חיפוש</a>
             <a href="profile.html" class="active">פרופיל</a>
             <a href="about.html">אודות</a>
@@ -270,7 +271,10 @@ async function renderProject(userId) {
             </div>
             <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
             <div class="prog-label">${done} / ${total} הושלמו (${pct}%)</div>
-            <a class="open-btn" href="HomePage.html">פתח בדף עבודה ←</a>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <a class="open-btn" href="writing.html">✍️ המשך כתיבה</a>
+              <a class="open-btn" href="HomePage.html" style="background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.35)">📋 דף עבודה</a>
+            </div>
         </div>`;
 
         // Cache locally so other pages see it right away

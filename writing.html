@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>כתיבת העבודה | למידה חכמה</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ── Page ──────────────────────────────────────────────── */
+.writing-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+}
+
+/* ── Document header ───────────────────────────────────── */
+.doc-header {
+  background: var(--bg-card);
+  border: 1px solid rgba(148,252,196,0.18);
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.doc-title-input {
+  width: 100%;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  direction: rtl;
+  margin-bottom: 12px;
+  border-bottom: 2px solid rgba(148,163,184,0.1);
+  padding-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.doc-title-input:focus { border-bottom-color: var(--accent); }
+.doc-title-input::placeholder { color: rgba(148,163,184,0.4); }
+
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.doc-meta span { display: flex; align-items: center; gap: 5px; }
+.doc-meta strong { color: var(--text-secondary); }
+
+/* ── No project state ──────────────────────────────────── */
+.no-project {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+}
+.no-project .big-icon { font-size: 3.5rem; margin-bottom: 16px; }
+.no-project h2 { font-size: 1.3rem; color: var(--text-bright); margin-bottom: 8px; }
+.no-project p  { font-size: 0.95rem; margin-bottom: 24px; line-height: 1.7; }
+.no-project a  {
+  display: inline-block; padding: 12px 28px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: white; border-radius: 12px; text-decoration: none;
+  font-weight: 700; font-size: 0.95rem; transition: all 0.2s;
+}
+.no-project a:hover { transform: translateY(-2px); box-shadow: var(--shadow-btn); }
+
+/* ── Section boxes ─────────────────────────────────────── */
+.section-box {
+  background: var(--bg-card);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-radius: 18px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.section-box:focus-within {
+  border-color: rgba(37,99,235,0.35);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.07);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(37,99,235,0.07);
+  border-bottom: 1px solid rgba(148,163,184,0.08);
+  cursor: pointer;
+  user-select: none;
+}
+.section-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: white; font-size: 0.78rem; font-weight: 800;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.section-title-text {
+  flex: 1;
+  font-size: 0.97rem; font-weight: 700; color: var(--text-bright);
+}
+.section-desc-hint {
+  font-size: 0.78rem; color: var(--text-muted); font-style: italic;
+  flex-shrink: 0; max-width: 240px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.section-collapse-btn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 1rem; padding: 2px 6px;
+  transition: color 0.2s; flex-shrink: 0;
+}
+.section-collapse-btn:hover { color: var(--text-bright); }
+
+.section-body { padding: 0; transition: all 0.25s ease; }
+.section-body.collapsed { display: none; }
+
+/* Permanent instruction hint — stays visible while typing */
+.section-hint {
+  margin: 14px 20px 0;
+  padding: 10px 14px;
+  background: rgba(124,58,237,0.07);
+  border-right: 3px solid rgba(124,58,237,0.4);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.section-textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 18px 20px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 0.97rem;
+  line-height: 1.8;
+  resize: vertical;
+  direction: rtl;
+  box-sizing: border-box;
+}
+.section-textarea::placeholder { color: rgba(148,163,184,0.35); }
+
+.section-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 10px;
+  border-top: 1px solid rgba(148,163,184,0.07);
+}
+.word-count { font-size: 0.75rem; color: var(--text-muted); }
+.section-clear-btn {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 0.75rem; cursor: pointer; font-family: inherit;
+  transition: color 0.2s;
+}
+.section-clear-btn:hover { color: #ef4444; }
+
+/* ── Progress bar ──────────────────────────────────────── */
+.writing-progress {
+  background: var(--bg-card);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wp-label { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+.wp-bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+.wp-bar      { height: 100%; background: linear-gradient(90deg,#10b981,#3b82f6); border-radius: 999px; transition: width 0.4s ease; }
+.wp-pct      { font-size: 0.85rem; font-weight: 800; color: var(--accent); white-space: nowrap; }
+
+/* ── Compile bar ───────────────────────────────────────── */
+.compile-bar {
+  position: sticky;
+  bottom: 20px;
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(7,11,22,0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(148,163,184,0.15);
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+.compile-btn {
+  flex: 1; padding: 14px;
+  background: linear-gradient(135deg,#059669,#0284c7);
+  color: white; border: none; border-radius: 12px;
+  font-size: 0.97rem; font-weight: 800; font-family: inherit;
+  cursor: pointer; transition: all 0.2s;
+}
+.compile-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(5,150,105,0.4); }
+.autosave-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--text-muted); white-space: nowrap;
+}
+.autosave-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #10b981; animation: pulse 2s infinite;
+}
+
+/* ── Toast ─────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg,#059669,#0284c7); color: white;
+  padding: 11px 26px; border-radius: 999px; font-weight: 700; font-size: 0.88rem;
+  z-index: 2000; pointer-events: none; white-space: nowrap;
+  animation: toastIn 0.3s ease;
+}
+@keyframes toastIn {
+  from { opacity:0; transform:translateX(-50%) translateY(8px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .doc-title-input { font-size: 1.3rem; }
+  .section-desc-hint { display: none; }
+  .compile-bar { flex-wrap: wrap; }
+}
+
+/* ── Stuck coach ────────────────────────────────────────── */
+.stuck-fab {
+  position: fixed; bottom: 24px; left: 24px; z-index: 999;
+  background: linear-gradient(135deg,#f97316,#ef4444); color: white;
+  border: none; border-radius: 999px; padding: 11px 20px;
+  font-size: 0.9rem; font-weight: 800; font-family: inherit;
+  cursor: pointer; box-shadow: 0 5px 18px rgba(249,115,22,0.4);
+  transition: all 0.2s ease;
+}
+.stuck-fab:hover { transform: translateY(-2px) scale(1.04); }
+
+.stuck-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; }
+.stuck-panel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+  background: var(--bg-card); border-top: 1px solid var(--border);
+  border-radius: 22px 22px 0 0; padding: 18px; max-height: 72vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 -6px 36px rgba(0,0,0,0.3);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+.stuck-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.stuck-panel-header h3 { font-size:0.95rem; color:var(--text-bright); font-weight:700; }
+.stuck-panel-header p  { font-size:0.74rem; color:var(--text-muted); margin-top:2px; }
+.stuck-close { background:none; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding:4px; }
+.stuck-close:hover { color:var(--text-bright); }
+
+.stuck-messages {
+  flex:1; overflow-y:auto; display:flex; flex-direction:column;
+  gap:9px; margin-bottom:12px; max-height:38vh;
+}
+.stuck-msg {
+  max-width:80%; padding:9px 13px; border-radius:14px;
+  font-size:0.84rem; line-height:1.55; white-space:pre-wrap;
+}
+.stuck-msg.assistant {
+  background:rgba(255,255,255,0.06); color:var(--text-secondary);
+  border-radius:14px 14px 14px 4px; align-self:flex-end;
+}
+.stuck-msg.user {
+  background:linear-gradient(135deg,var(--accent),var(--purple)); color:white;
+  border-radius:14px 14px 4px 14px; align-self:flex-start; margin-right:auto;
+}
+.stuck-input-row { display:flex; gap:7px; }
+.stuck-input-row textarea {
+  flex:1; resize:none; padding:9px 12px;
+  border:1px solid rgba(148,163,184,0.22); border-radius:10px;
+  background:rgba(255,255,255,0.05); color:var(--text);
+  font-size:0.84rem; font-family:inherit; line-height:1.4;
+}
+.stuck-input-row textarea:focus { outline:none; border-color:#f97316; background:rgba(249,115,22,0.06); }
+.stuck-send-btn {
+  padding:9px 14px; background:linear-gradient(135deg,#f97316,#ef4444);
+  color:white; border:none; border-radius:10px; font-weight:700;
+  font-family:inherit; cursor:pointer; font-size:0.84rem; align-self:flex-end;
+  transition:all 0.2s ease;
+}
+.stuck-send-btn:hover { transform:translateY(-1px); }
+.stuck-send-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.stuck-typing { font-style:italic; opacity:0.6; animation:pulse 1.2s infinite; }
+
+/* Section picker grid */
+.spick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 4px;
+}
+.spick-btn {
+  padding: 9px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(148,163,184,0.22);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-family: inherit; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; text-align: right; line-height: 1.3;
+  transition: all 0.15s ease;
+}
+.spick-btn:hover {
+  background: rgba(37,99,235,0.18);
+  border-color: rgba(37,99,235,0.4);
+  color: var(--text-bright);
+  transform: translateY(-1px);
+}
+.spick-general {
+  grid-column: 1 / -1;
+  background: rgba(249,115,22,0.1);
+  border-color: rgba(249,115,22,0.3);
+  color: #fdba74;
+}
+.spick-general:hover {
+  background: rgba(249,115,22,0.22);
+  border-color: rgba(249,115,22,0.5);
+  color: #fed7aa;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="site-header">
+    <div class="logo"></div>
+    <nav>
+      <a href="index.html">דף הבית</a>
+      <a href="HomePage.html">דף עבודה</a>
+      <a href="writing.html" class="active">כתיבה</a>
+      <a href="RecuresiveDecomposition.html">התקדמות</a>
+      <a href="profile.html">פרופיל</a>
+      <a href="about.html">אודות</a>
+    </nav>
+    <button class="cta-button" onclick="window.location.href='index.html'">דף הבית</button>
+  </header>
+
+  <div class="writing-page">
+
+    <!-- Document header -->
+    <div class="doc-header" id="docHeader" style="display:none">
+      <input type="text" class="doc-title-input" id="docTitle" placeholder="כותרת העבודה...">
+      <div class="doc-meta" id="docMeta"></div>
+    </div>
+
+    <!-- Writing progress -->
+    <div class="writing-progress" id="writingProgress" style="display:none">
+      <span class="wp-label">התקדמות כתיבה:</span>
+      <div class="wp-bar-wrap"><div class="wp-bar" id="wpBar" style="width:0%"></div></div>
+      <span class="wp-pct" id="wpPct">0%</span>
+    </div>
+
+    <!-- Section boxes injected here -->
+    <div id="sectionsContainer"></div>
+
+    <!-- No-project state -->
+    <div class="no-project" id="noProject" style="display:none">
+      <div class="big-icon">📝</div>
+      <h2>אין תוכנית עדיין</h2>
+      <p>כדי להתחיל לכתוב, צריך קודם לפרק את המשימה ב<strong>דף העבודה</strong>.<br>
+         לאחר שה-AI יבנה את המשימות, תוכל לחזור לכאן ולמלא כל חלק.</p>
+      <a href="HomePage.html">עבור לדף עבודה →</a>
+    </div>
+
+    <!-- Sticky compile bar -->
+    <div class="compile-bar" id="compileBar" style="display:none">
+      <div class="autosave-badge">
+        <div class="autosave-dot"></div>
+        <span id="autosaveLabel">נשמר אוטומטית</span>
+      </div>
+      <button class="compile-btn" onclick="compileToDoc()">📄 הורד כמסמך Word</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- "I'm Stuck" FAB -->
+<button class="stuck-fab" onclick="openStuck()">נתקעתי 🤔</button>
+
+<!-- Stuck Coach Panel -->
+<div class="stuck-overlay" id="stuckOverlay" style="display:none" onclick="closeStuck()"></div>
+<div class="stuck-panel"   id="stuckPanel"   style="display:none" dir="rtl">
+  <div class="stuck-panel-header">
+    <div>
+      <h3>מאמן ה-AI שלך 🧠</h3>
+      <p>אני כאן לעזור לך לחשוב — לא לכתוב במקומך 😊</p>
+    </div>
+    <button class="stuck-close" onclick="closeStuck()">✕</button>
+  </div>
+  <div class="stuck-messages" id="stuckMessages"></div>
+  <div class="stuck-input-row">
+    <textarea id="stuckInput" rows="2" placeholder="תאר במה נתקעת..."
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendStuck();}"></textarea>
+    <button class="stuck-send-btn" id="stuckSendBtn" onclick="sendStuck()">שלח</button>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script type="module" src="./supabase.js"></script>
+<script>
+const WRITING_KEY    = 'assignment_writing';
+const APP_STATE_KEY  = 'decompose_app_state';
+
+let sections = [];      // [{id, title, description}]
+let writing  = {};      // { [id]: string }
+let docTitle = '';
+let saveTimer = null;
+
+/* ── Init ─────────────────────────────────────────────── */
+function init() {
+  // Load app state (project plan)
+  let appState = null;
+  try { appState = JSON.parse(localStorage.getItem(APP_STATE_KEY) || 'null'); } catch(e) {}
+
+  // Load previously saved writing
+  try { const w = localStorage.getItem(WRITING_KEY); if (w) writing = JSON.parse(w); } catch(e) {}
+
+  if (!appState?.chunks?.length) {
+    document.getElementById('noProject').style.display = 'block';
+    return;
+  }
+
+  sections = appState.chunks;
+  docTitle = writing._title || appState.topic || '';
+
+  // Show UI
+  document.getElementById('docHeader').style.display       = 'block';
+  document.getElementById('writingProgress').style.display = 'flex';
+  document.getElementById('compileBar').style.display      = 'flex';
+
+  // Fill doc header
+  document.getElementById('docTitle').value = docTitle;
+  document.getElementById('docMeta').innerHTML = [
+    appState.subject ? `<span>📚 <strong>${esc(appState.subject)}</strong></span>` : '',
+    appState.dueDate ? `<span>📅 הגשה: <strong>${appState.dueDate}</strong></span>` : '',
+    `<span>✏️ <strong>${sections.length}</strong> חלקים</span>`,
+  ].filter(Boolean).join('');
+
+  renderSections();
+  updateProgress();
+}
+
+/* ── Render section boxes ─────────────────────────────── */
+function renderSections() {
+  const container = document.getElementById('sectionsContainer');
+  container.innerHTML = sections.map((sec, i) => {
+    const id      = sec.id || `chunk-${i}`;
+    const content = writing[id] || '';
+    const words   = countWords(content);
+    return `
+    <div class="section-box" id="box-${id}">
+      <div class="section-header" onclick="toggleSection('${id}')">
+        <div class="section-num">${i + 1}</div>
+        <div class="section-title-text">${esc(sec.title)}</div>
+        <button class="section-collapse-btn" id="collapse-${id}" title="כווץ/הרחב">▼</button>
+      </div>
+      <div class="section-body" id="body-${id}">
+        ${sec.description ? `<div class="section-hint">💡 ${esc(sec.description)}</div>` : ''}
+        <textarea
+          class="section-textarea"
+          id="ta-${id}"
+          placeholder="כתוב כאן את החלק הזה של העבודה..."
+          oninput="onType('${id}', this)"
+        >${esc(content)}</textarea>
+        <div class="section-footer">
+          <span class="word-count" id="wc-${id}">${words} מילים</span>
+          <button class="section-clear-btn" onclick="clearSection('${id}')">× נקה</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Typing handler ───────────────────────────────────── */
+function onType(id, el) {
+  writing[id] = el.value;
+  document.getElementById(`wc-${id}`).textContent = countWords(el.value) + ' מילים';
+  updateProgress();
+  scheduleSave();
+}
+
+/* ── Title handler ────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('docTitle')?.addEventListener('input', function() {
+    docTitle = this.value;
+    writing._title = this.value;
+    scheduleSave();
+  });
+});
+
+// Also try cloud load when Supabase is ready
+window.addEventListener('supabase:ready', async () => {
+  try {
+    const user = await window.supabaseHelpers.getCurrentUser();
+    if (!user) return;
+    const state = await window.supabaseHelpers.loadTaskState(user.id);
+    if (state?.chunks?.length) {
+      // Merge cloud plan with local writing
+      const local = localStorage.getItem(APP_STATE_KEY);
+      if (!local) {
+        localStorage.setItem(APP_STATE_KEY, JSON.stringify(state));
+        init();
+      }
+    }
+  } catch(e) {}
+});
+
+/* ── Collapse ─────────────────────────────────────────── */
+function toggleSection(id) {
+  const body = document.getElementById(`body-${id}`);
+  const btn  = document.getElementById(`collapse-${id}`);
+  const collapsed = body.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▶' : '▼';
+}
+
+/* ── Clear ────────────────────────────────────────────── */
+function clearSection(id) {
+  if (!confirm('נקה את תוכן החלק הזה?')) return;
+  writing[id] = '';
+  document.getElementById(`ta-${id}`).value = '';
+  document.getElementById(`wc-${id}`).textContent = '0 מילים';
+  updateProgress();
+  scheduleSave();
+}
+
+/* ── Progress ─────────────────────────────────────────── */
+function updateProgress() {
+  const filled = sections.filter(sec => (writing[sec.id || `chunk-${sections.indexOf(sec)}`] || '').trim().length > 0).length;
+  const pct    = sections.length ? Math.round((filled / sections.length) * 100) : 0;
+  document.getElementById('wpBar').style.width = pct + '%';
+  document.getElementById('wpPct').textContent = pct + '%';
+}
+
+/* ── Auto-save ────────────────────────────────────────── */
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveWriting, 800);
+}
+
+function saveWriting() {
+  localStorage.setItem(WRITING_KEY, JSON.stringify(writing));
+  const lbl = document.getElementById('autosaveLabel');
+  lbl.textContent = 'נשמר — ' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── Compile to Word ──────────────────────────────────── */
+function compileToDoc() {
+  const title    = document.getElementById('docTitle').value.trim() || 'העבודה שלי';
+  let   appState = null;
+  try { appState = JSON.parse(localStorage.getItem(APP_STATE_KEY) || 'null'); } catch(e) {}
+
+  const subject  = appState?.subject || '';
+  const dueDate  = appState?.dueDate || '';
+  const today    = new Date().toLocaleDateString('he-IL');
+
+  // Only include sections that have actual content written
+  const sectionsHtml = sections.map((sec, i) => {
+    const id      = sec.id || `chunk-${i}`;
+    const content = (writing[id] || '').trim();
+    if (!content) return ''; // skip empty sections
+
+    const paras = content
+      .split(/\n+/)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(p => `<p>${escHtml(p)}</p>`)
+      .join('');
+
+    return `
+      <div class="section">
+        <h2>${i + 1}. ${escHtml(sec.title)}</h2>
+        ${paras}
+      </div>`;
+  }).join('');
+
+  const html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    margin: 2.5cm 3cm;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    direction: rtl;
+    color: #000;
+    font-size: 12pt;
+    line-height: 1.8;
+    background: #fff;
+  }
+
+  /* ── Title block ── */
+  .title-block {
+    text-align: center;
+    margin-bottom: 52px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #000;
+  }
+  .title-block h1 {
+    font-size: 20pt;
+    font-weight: bold;
+    margin: 0 0 14px;
+    color: #000;
+  }
+  .title-block .meta-line {
+    font-size: 11pt;
+    color: #333;
+    margin: 5px 0;
+  }
+
+  /* ── Section heading ── */
+  h2 {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #000;
+    margin: 0 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #888;
+  }
+
+  /* ── Body text ── */
+  p {
+    margin: 0 0 10px;
+    font-size: 12pt;
+    text-align: justify;
+  }
+
+  /* ── Section spacing ── */
+  .section {
+    margin-bottom: 36px;
+    page-break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+
+<div class="title-block">
+  <h1>${escHtml(title)}</h1>
+  ${subject ? `<div class="meta-line">מקצוע: ${escHtml(subject)}</div>` : ''}
+  ${dueDate ? `<div class="meta-line">תאריך הגשה: ${dueDate}</div>` : ''}
+  <div class="meta-line">תאריך הכנה: ${today}</div>
+</div>
+
+${sectionsHtml || '<p style="color:#666;font-style:italic">לא נכתב תוכן עדיין.</p>'}
+
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = (title.replace(/[\s/\\?%*:|"<>]/g, '-') || 'assignment') + '.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('✓ המסמך הורד בהצלחה');
+}
+
+/* ── Helpers ──────────────────────────────────────────── */
+function countWords(str) {
+  return str.trim() ? str.trim().split(/\s+/).length : 0;
+}
+
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+/* ── Stuck Coach ──────────────────────────────────────── */
+const STUCK_HISTORY = [];
+let   stuckSection  = null;   // the section the user selected
+
+function buildCoachSystem(sec) {
+  const sectionCtx = sec
+    ? `התלמיד עובד כרגע על החלק: "${sec.title}"${sec.description ? `\nתיאור החלק: ${sec.description}` : ''}.`
+    : 'התלמיד שאל שאלה כללית על הכתיבה.';
+
+  return `אתה מורה פרטי לכתיבה אקדמית לתלמידי תיכון. ${sectionCtx}
+
+תפקידך לעזור לתלמיד **ממש כמו מורה פרטי**:
+- הסבר רעיונות בצורה ברורה ופשוטה
+- הצע מבנה או נקודת התחלה לפסקה
+- עזור לנסח מחשבות שהוא כבר יש לו
+- תן דוגמאות קצרות להמחשה כשצריך
+- שאל שאלה מנחה אחת אם הוא לא ברור
+- אל תכתוב את הטקסט המלא עבורו — הכוון ועזור, אבל הוא כותב
+- ענה בעברית, קצר וממוקד — עד 4 משפטים`;
+}
+
+function openStuck() {
+  document.getElementById('stuckPanel').style.display   = 'flex';
+  document.getElementById('stuckOverlay').style.display = 'block';
+
+  if (STUCK_HISTORY.length === 0) {
+    showSectionPicker();
+  }
+}
+
+function closeStuck() {
+  document.getElementById('stuckPanel').style.display   = 'none';
+  document.getElementById('stuckOverlay').style.display = 'none';
+}
+
+function showSectionPicker() {
+  const container = document.getElementById('stuckMessages');
+  container.innerHTML = '';
+
+  // Build up to 5 section buttons + 1 general
+  const sectionBtns = sections.slice(0, 5).map((sec, i) =>
+    `<button class="spick-btn" onclick="selectStuckSection(${i})">${i + 1}. ${esc(sec.title.length > 28 ? sec.title.slice(0,26)+'…' : sec.title)}</button>`
+  ).join('');
+  const generalBtn = `<button class="spick-btn spick-general" onclick="selectStuckSection(-1)">💬 כללי</button>`;
+
+  const div = document.createElement('div');
+  div.className = 'stuck-msg assistant';
+  div.innerHTML = `
+    <div style="font-weight:700;margin-bottom:10px">על איזה חלק אתה עובד? 👇</div>
+    <div class="spick-grid">${sectionBtns}${generalBtn}</div>`;
+  container.appendChild(div);
+}
+
+window.selectStuckSection = async function(index) {
+  stuckSection = index >= 0 ? sections[index] : null;
+
+  // Clear picker and reset history
+  document.getElementById('stuckMessages').innerHTML = '';
+  STUCK_HISTORY.length = 0;
+
+  // Show which section was chosen
+  const label = stuckSection ? `עובד על: ${stuckSection.title}` : 'שאלה כללית';
+  addStuckMsg('user', label);
+
+  // Ask AI to open the conversation as a tutor for this section
+  const openingPrompt = stuckSection
+    ? `אני צריך עזרה בכתיבת החלק "${stuckSection.title}". איך כדאי לי להתחיל?`
+    : 'אני צריך עזרה כללית עם הכתיבה.';
+
+  await callCoach(openingPrompt);
+  document.getElementById('stuckInput').focus();
+};
+
+function addStuckMsg(role, text) {
+  if (role !== 'picker') STUCK_HISTORY.push({ role, text });
+  const container = document.getElementById('stuckMessages');
+  const div = document.createElement('div');
+  div.className = `stuck-msg ${role}`;
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendStuck() {
+  const input = document.getElementById('stuckInput');
+  const btn   = document.getElementById('stuckSendBtn');
+  const text  = input.value.trim();
+  if (!text || btn.disabled) return;
+
+  // If still in picker state (no section chosen yet), treat as general
+  if (STUCK_HISTORY.length === 0) {
+    stuckSection = null;
+    document.getElementById('stuckMessages').innerHTML = '';
+  }
+
+  addStuckMsg('user', text);
+  input.value = '';
+  btn.disabled = true;
+  await callCoach(text);
+  btn.disabled = false;
+  input.focus();
+}
+
+async function callCoach(userText) {
+  const typing = document.createElement('div');
+  typing.className = 'stuck-msg assistant stuck-typing';
+  typing.textContent = 'חושב...';
+  document.getElementById('stuckMessages').appendChild(typing);
+  document.getElementById('stuckMessages').scrollTop = 99999;
+
+  try {
+    const systemPrompt = buildCoachSystem(stuckSection);
+    const messages = [{ role: 'system', content: systemPrompt }];
+
+    // Build conversation history (exclude the last user message, it's passed separately)
+    const historyWithoutLast = STUCK_HISTORY.slice(0, -1);
+    historyWithoutLast.forEach(m =>
+      messages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.text })
+    );
+    messages.push({ role: 'user', content: userText });
+
+    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${window.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({ model: 'google/gemini-2.0-flash-001', messages }),
+    });
+
+    const json  = await resp.json();
+    const reply = json.choices?.[0]?.message?.content || 'מצטער, לא הצלחתי להגיב.';
+    typing.remove();
+    addStuckMsg('assistant', reply);
+  } catch(err) {
+    typing.remove();
+    addStuckMsg('assistant', 'לא הצלחתי להתחבר. בדוק את החיבור לאינטרנט ונסה שוב.');
+    console.error('[StuckCoach]', err);
+  }
+}
+</script>
+</body>
+</html>
