@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import TasksPage from './pages/TasksPage';
+import SourcesPage from './pages/SourcesPage';
 import './index.css';
 
 function Nav() {
@@ -10,8 +11,9 @@ function Nav() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40" dir="rtl">
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-2">
-        <span className="font-bold text-gray-900 ml-4">📚 Final Project</span>
+        <img src="/logo.svg" alt="Think Step" className="h-20 w-auto ml-2" />
         <NavLink to="/" className={linkClass} end>משימות</NavLink>
+        <NavLink to="/sources" className={linkClass}>מקורות</NavLink>
       </div>
     </header>
   );
@@ -23,6 +25,7 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<TasksPage />} />
+        <Route path="/sources" element={<SourcesPage />} />
       </Routes>
     </BrowserRouter>
   );

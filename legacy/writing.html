@@ -332,7 +332,7 @@
 <div class="page">
 
   <header class="site-header">
-    <div class="logo"></div>
+    <img src="logo.svg" class="logo" alt="Think Step" />
     <nav>
       <a href="index.html">דף הבית</a>
       <a href="HomePage.html">דף עבודה</a>
@@ -706,20 +706,23 @@ const STUCK_HISTORY = [];
 let   stuckSection  = null;   // the section the user selected
 
 function buildCoachSystem(sec) {
+  const topic   = docTitle || '';
+  const subject = (JSON.parse(localStorage.getItem('decompose_app_state') || '{}').subject) || '';
+
   const sectionCtx = sec
-    ? `התלמיד עובד כרגע על החלק: "${sec.title}"${sec.description ? `\nתיאור החלק: ${sec.description}` : ''}.`
+    ? `התלמיד עובד כרגע על החלק: "${sec.title}"${sec.description ? `\nמה צריך לעשות בחלק זה: ${sec.description}` : ''}.`
     : 'התלמיד שאל שאלה כללית על הכתיבה.';
 
-  return `אתה מורה פרטי לכתיבה אקדמית לתלמידי תיכון. ${sectionCtx}
+  return `אתה מורה פרטי לכתיבה אקדמית לתלמידי תיכון.
+${subject ? `מקצוע: ${subject}` : ''}${topic ? `\nנושא העבודה: ${topic}` : ''}
+${sectionCtx}
 
-תפקידך לעזור לתלמיד **ממש כמו מורה פרטי**:
-- הסבר רעיונות בצורה ברורה ופשוטה
-- הצע מבנה או נקודת התחלה לפסקה
-- עזור לנסח מחשבות שהוא כבר יש לו
-- תן דוגמאות קצרות להמחשה כשצריך
-- שאל שאלה מנחה אחת אם הוא לא ברור
-- אל תכתוב את הטקסט המלא עבורו — הכוון ועזור, אבל הוא כותב
-- ענה בעברית, קצר וממוקד — עד 4 משפטים`;
+תפקידך לעזור לתלמיד ממש כמו מורה פרטי:
+- ענה בעברית תמיד, קצר וממוקד (עד 4 משפטים).
+- אם השאלה ספציפית (כמו "מה אומר?" או "איך מתחילים?") — תן הצעה קונקרטית ישירה הקשורה לחלק הספציפי.
+- הצע מבנה או פתיח לפסקה כשצריך.
+- עזור לנסח מחשבות — אבל אל תכתוב את כל הטקסט במקומו.
+- אם השאלה לא ברורה — שאל שאלה מבהירה אחת.`;
 }
 
 function openStuck() {

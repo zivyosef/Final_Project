@@ -11,7 +11,7 @@ const MAX_HISTORY = 10;
 
 // ── OpenRouter setup (active) ─────────────────────────────────
 const _openRouterKey = window.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = "google/gemini-flash-1.5";
+const OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
 window.OPENROUTER_MODEL = OPENROUTER_MODEL;
 console.log('🟠 [aiService] OpenRouter key loaded?', _openRouterKey ? `yes (${_openRouterKey.slice(0,12)}...)` : '❌ key not found!');
