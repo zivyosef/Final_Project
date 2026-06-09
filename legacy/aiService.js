@@ -12,8 +12,8 @@ const MAX_HISTORY = 10;
 // ── OpenRouter setup (active) ─────────────────────────────────
 const OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
-window.OPENROUTER_MODEL = OPENROUTER_MODEL;
-console.log('🟠 [aiService] OpenRouter key loaded?', window.OPENROUTER_API_KEY ? `yes (${window.OPENROUTER_API_KEY.slice(0,12)}...)` : '❌ key not found!');
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+console.log('🟠 [aiService] OpenRouter key loaded?', OPENROUTER_API_KEY ? `yes (${OPENROUTER_API_KEY.slice(0,12)}...)` : '❌ key not found!');
 
 // ── Gemini setup (commented out — restore if switching back) ──
 // const _apiKey = window.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
@@ -36,7 +36,8 @@ async function openRouterRequest(prompt, systemInstruction = null) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${window.OPENROUTER_API_KEY}`,
+      // ✅ שימוש במשתנה המקומי של Vite במקום ב-window
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
     },
     body: JSON.stringify({ model: OPENROUTER_MODEL, messages }),
   });
