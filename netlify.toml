@@ -1,9 +1,10 @@
 [build]
-  command = "node scripts/generate-config.js"
   publish = "legacy"
 
-[build.environment]
-  NODE_VERSION = "20"
+[[redirects]]
+  from   = "/api/openrouter"
+  to     = "/.netlify/functions/openrouter-proxy"
+  status = 200
 
 [[redirects]]
   from   = "/api/tavily-sources"
