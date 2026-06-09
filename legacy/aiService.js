@@ -12,7 +12,7 @@ const MAX_HISTORY = 10;
 // ── OpenRouter setup (active) ─────────────────────────────────
 const OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = window.OPENROUTER_API_KEY;
 console.log('🟠 [aiService] OpenRouter key loaded?', OPENROUTER_API_KEY ? `yes (${OPENROUTER_API_KEY.slice(0,12)}...)` : '❌ key not found!');
 console.log("Key exists?", !!OPENROUTER_API_KEY);
 // ── Gemini setup (commented out — restore if switching back) ──
