@@ -97,16 +97,9 @@ header.site-header {
 /* ===== LOGO ===== */
 
 .logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  background-image: url("logo_progect.jpeg");
-  background-size: cover;
-  background-position: center;
+  display: inline-block;
+  height: 90px;
+  width: auto;
   flex-shrink: 0;
   text-decoration: none;
 }

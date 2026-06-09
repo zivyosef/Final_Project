@@ -580,7 +580,7 @@ input:focus {
 
   <!-- Navigation Header -->
   <header class="site-header">
-    <div class="logo"></div>
+    <img src="logo.svg" class="logo" alt="Think Step" />
     <nav>
       <a href="index.html">דף הבית</a>
       <a href="HomePage.html" class="active">דף עבודה</a>
@@ -1225,12 +1225,26 @@ function showSaveToast(msg) {
    "I'M STUCK" COACH
    ================================================================ */
 const STUCK_HISTORY = [];
-const COACH_SYSTEM = `אתה מאמן למידה סוקרטי. תפקידך היחיד הוא לעזור לתלמיד לחשוב באופן עצמאי.
+function buildCoachSystem() {
+  const subject = document.getElementById('subject')?.value?.trim() || '';
+  const topic   = document.getElementById('topic')?.value?.trim() || '';
+  const tasks   = subtasks.map(t => t.title).filter(Boolean).join(', ');
+
+  const context = [
+    subject && `מקצוע: ${subject}`,
+    topic   && `נושא העבודה: ${topic}`,
+    tasks   && `המשימות הנוכחיות: ${tasks}`,
+  ].filter(Boolean).join('\n');
+
+  return `אתה מאמן למידה שעוזר לתלמידים לפרק עבודות בית לשלבים ולהתקדם.
+${context ? `\nקונטקסט המשימה הנוכחית:\n${context}\n` : ''}
 כללים:
-1. לעולם אל תיתן את התשובה הסופית.
-2. שאל בדיוק שאלה אחת מנחה בכל תשובה.
-3. אם התלמיד מבקש "תגיד לי את התשובה" — הכר ברגשותיו ו-redirect עם שאלה.
-4. עד 3 משפטים בכל תשובה.`;
+1. ענה בעברית תמיד.
+2. תן תשובה קצרה וממוקדת — עד 3 משפטים.
+3. אם השאלה קשורה למשימה — עזור ישירות עם הצעה קונקרטית.
+4. אל תיתן את כל העבודה — עזור לתלמיד לחשוב בעצמו.
+5. אם השאלה לא ברורה — שאל שאלה מבהירה אחת.`;
+}
 
 window.openStuck = function() {
   document.getElementById('stuckPanel').style.display  = 'flex';
@@ -1253,8 +1267,7 @@ function addStuckMsg(role, text) {
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
 }
-
-window.sendStuck = async function() {
+/*window.sendStuck = async function() {
   const input = document.getElementById('stuckInput');
   const btn   = document.getElementById('stuckSendBtn');
   const text  = input.value.trim();
@@ -1272,7 +1285,7 @@ window.sendStuck = async function() {
 
   try {
     // ── OpenRouter (active) ───────────────────────────────────
-    const messages = [{ role: 'system', content: COACH_SYSTEM }];
+    const messages = [{ role: 'system', content: buildCoachSystem() }];
     STUCK_HISTORY.slice(0, -1).forEach(m => messages.push({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.text
@@ -1311,6 +1324,38 @@ window.sendStuck = async function() {
     // const reply  = json.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטער, לא הצלחתי להגיב.';
     typing.remove();
     addStuckMsg('assistant', reply);
+  } catch(err) {
+    typing.remove();
+    addStuckMsg('assistant', 'לא הצלחתי להתחבר ל-AI. נסה שוב.');
+    console.error('[StuckCoach]', err);
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+};*/
+window.sendStuck = async function() {
+  const input = document.getElementById('stuckInput');
+  const btn   = document.getElementById('stuckSendBtn');
+  const text  = input.value.trim();
+  if (!text || btn.disabled) return;
+
+  addStuckMsg('user', text);
+  input.value = '';
+  btn.disabled = true;
+
+  const typing = document.createElement('div');
+  typing.className = 'stuck-msg assistant stuck-typing';
+  typing.textContent = 'חושב...';
+  document.getElementById('stuckMessages').appendChild(typing);
+  document.getElementById('stuckMessages').scrollTop = 99999;
+
+  try {
+    // השתמשות בשירות המרכזי של aiService שכבר מיובא למעלה
+    // קריאה לפונקציה SOCRATIC_CHAT או יצירת פונקציה חדשה במיוחד לזה ב-aiService.
+    const reply = await window.aiService.sendQuery("SOCRATIC_CHAT", text, null);
+    
+    typing.remove();
+    addStuckMsg('assistant', reply || 'לא הצלחתי להבין, תוכל לנסח שוב?');
   } catch(err) {
     typing.remove();
     addStuckMsg('assistant', 'לא הצלחתי להתחבר ל-AI. נסה שוב.');
