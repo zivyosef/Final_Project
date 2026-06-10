@@ -6,10 +6,10 @@ exports.handler = async function (event) {
   try { body = JSON.parse(event.body || '{}'); }
   catch { return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) }; }
 
-  const apiKey = process.env.VITE_OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   console.log('[openrouter-proxy] key present?', !!apiKey);
   if (!apiKey)
-    return { statusCode: 500, body: JSON.stringify({ error: 'OpenRouter key not configured — VITE_OPENROUTER_API_KEY missing' }) };
+    return { statusCode: 500, body: JSON.stringify({ error: 'OpenRouter key not configured — OPENROUTER_API_KEY missing' }) };
 
   try {
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {

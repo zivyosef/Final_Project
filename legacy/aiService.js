@@ -9,6 +9,7 @@
 const AI_HISTORY_KEY = "my_ai_app_history";
 const MAX_HISTORY = 10;
 
+// ── OpenRouter setup ─────────────────────────────────────────
 // ── OpenRouter setup — proxied via Netlify Function ──────────
 const OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const OPENROUTER_URL   = "/api/openrouter";
